@@ -9,6 +9,22 @@ import "C"
 
 import "github.com/sleepinggenius2/gosmi/types"
 
+type Table struct {
+	Node
+	Columns map[string]Node
+	Implied bool
+	Index []Node
+}
+
+func (t Node) AsTable() Table {
+	return Table{
+		Node: t,
+		Columns: t.GetColumns(),
+		Implied: t.GetImplied(),
+		Index: t.GetIndex(),
+	}
+}
+
 func (t Node) getRow() (row *C.struct_SmiNode) {
 	row = C.smiGetFirstChildNode(t.SmiNode)
 	if row == nil {
@@ -23,18 +39,21 @@ func (t Node) getRow() (row *C.struct_SmiNode) {
 	return
 }
 
-func (t Node) GetColumns() (columns []Node) {
+func (t Node) GetColumns() (columns map[string]Node) {
 	row := t.getRow()
 	if row == nil {
 		return
 	}
 
-	for column := C.smiGetFirstChildNode(row); column != nil; column = C.smiGetNextChildNode(column) {
-		if types.NodeKind(column.nodekind) != types.NodeColumn {
+	columns = make(map[string]Node)
+
+	for smiColumn := C.smiGetFirstChildNode(row); smiColumn != nil; smiColumn = C.smiGetNextChildNode(smiColumn) {
+		if types.NodeKind(smiColumn.nodekind) != types.NodeColumn {
 			// TODO: error
 			return
 		}
-		columns = append(columns, CreateNode(column))
+		column := CreateNode(smiColumn)
+		columns[column.Name] = column
 	}
 	return
 }
@@ -59,17 +78,17 @@ func (t Node) GetIndex() (index []Node) {
 		return
 	}
 
-	for element := C.smiGetFirstElement(row); element != nil; element = C.smiGetNextElement(element) {
-		column := C.smiGetElementNode(element)
-		if column == nil {
+	for smiElement := C.smiGetFirstElement(row); smiElement != nil; smiElement = C.smiGetNextElement(smiElement) {
+		smiColumn := C.smiGetElementNode(smiElement)
+		if smiColumn == nil {
 			// TODO: error
 			return
 		}
-		if types.NodeKind(column.nodekind) != types.NodeColumn {
+		if types.NodeKind(smiColumn.nodekind) != types.NodeColumn {
 			// TODO: error
 			return
 		}
-		index = append(index, CreateNode(column))
+		index = append(index, CreateNode(smiColumn))
 	}
 	return
 }

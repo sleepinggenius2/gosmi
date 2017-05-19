@@ -35,7 +35,7 @@ func (n Node) GetModule() (module Module) {
 func (n Node) GetSubtree() (nodes []Node) {
 	first := true
 	smiNode := n.SmiNode
-	for oidlen := len(n.Oid); smiNode != nil && (first || int(smiNode.oidlen) > oidlen); smiNode = C.smiGetNextNode(smiNode, C.SMI_NODEKIND_ANY) {
+	for oidlen := n.OidLen; smiNode != nil && (first || int(smiNode.oidlen) > oidlen); smiNode = C.smiGetNextNode(smiNode, C.SMI_NODEKIND_ANY) {
 		node := CreateNode(smiNode)
 		nodes = append(nodes, node)
 		first = false
@@ -47,6 +47,16 @@ func (n Node) Render(flags types.Render) string {
 	cRenderString := C.smiRenderNode(n.SmiNode, C.int(flags))
 
 	return C.GoString(cRenderString)
+}
+
+func (n Node) RenderNumeric() string {
+	cRenderString := C.smiRenderOID(n.SmiNode.oidlen, n.SmiNode.oid, C.int(types.RenderNumeric))
+
+	return C.GoString(cRenderString)
+}
+
+func (n Node) RenderQualified() string {
+	return n.Render(types.RenderQualified)
 }
 
 func CreateNode(smiNode *C.struct_SmiNode) (node Node) {

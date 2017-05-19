@@ -9,6 +9,7 @@ import "C"
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/sleepinggenius2/gosmi/types"
 )
@@ -87,6 +88,14 @@ func (t *Type) getRanges() {
 		ranges = append(ranges, r)
 	}
 	t.Ranges = ranges
+}
+
+func (t Type) String() string {
+	typeStr := t.Name
+	if t.BaseType.String() != typeStr {
+		typeStr += "<" + t.BaseType.String() + ">"
+	}
+	return fmt.Sprintf("Type[%s Status=%s, Format=%s, Units=%s]", typeStr, t.Status, t.Format, t.Units)
 }
 
 func CreateType(smiType *C.struct_SmiType) (outType Type) {

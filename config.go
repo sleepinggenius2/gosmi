@@ -8,6 +8,7 @@ package gosmi
 import "C"
 
 import (
+	"os"
 	"strings"
 	"unsafe"
 )
@@ -32,19 +33,36 @@ func GetPath() string {
 }
 
 func SetPath(path string) {
-	newPath := C.CString(strings.Trim(path, ":"))
+	newPath := C.CString(strings.Trim(path, string(os.PathListSeparator)))
 	defer C.free(unsafe.Pointer(newPath))
 	C.smiSetPath(newPath)
 }
 
 func AppendPath(path string) {
 	oldPath := GetPath()
-	newPath := oldPath + ":" + path
+	newPath := oldPath + string(os.PathListSeparator) + path
 	SetPath(newPath)
 }
 
 func PrependPath(path string) {
 	oldPath := GetPath()
-	newPath := path + ":" + oldPath
+	newPath := path + string(os.PathListSeparator) + oldPath
 	SetPath(newPath)
+}
+
+func ReadConfig(filename string, tag ...string) bool {
+	configTag := "gosmi"
+	if len(tag) > 0 {
+		configTag = tag[0]
+	}
+
+	cFilename := C.CString(filename)
+	defer C.free(unsafe.Pointer(cFilename))
+
+	cTag := C.CString(configTag)
+	defer C.free(unsafe.Pointer(cTag))
+
+	cStatus := C.smiReadConfig(cFilename, cTag)
+
+	return C.int(cStatus) == 0
 }
