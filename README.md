@@ -13,8 +13,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
 	"github.com/sleepinggenius2/gosmi"
 )
@@ -65,9 +65,9 @@ func Init() {
 			fmt.Println("Failed to load module %s\n", module)
 			return
 		}
-        if debug {
-            fmt.Printf("Loaded module %s\n", moduleName)
-        }
+		if debug {
+			fmt.Printf("Loaded module %s\n", moduleName)
+		}
 	}
 
 	if debug {
@@ -109,16 +109,16 @@ func ModuleTrees() {
 		nodes := m.GetNodes()
 		types := m.GetTypes()
 
-        jsonBytes, _ := json.Marshal(struct{
-            Module gosmi.Module
-            Nodes []gosmi.Node
-            Types []gosmi.Type
-        }{
-            Module: m,
-            Nodes: nodes,
-            Types: types,
-        })
-        os.Stdout.Write(jsonBytes)
+		jsonBytes, _ := json.Marshal(struct {
+			Module gosmi.Module
+			Nodes  []gosmi.Node
+			Types  []gosmi.Type
+		}{
+			Module: m,
+			Nodes:  nodes,
+			Types:  types,
+		})
+		os.Stdout.Write(jsonBytes)
 	}
 }
 ```
