@@ -60,9 +60,9 @@ func Init() {
 	}
 
 	for _, module := range modules {
-		moduleName, ok := gosmi.LoadModule(module)
-		if !ok {
-			fmt.Println("Failed to load module %s\n", module)
+		moduleName, err := gosmi.LoadModule(module)
+		if err != nil {
+			fmt.Println("Error: %s\n", err)
 			return
 		}
 		if debug {
@@ -86,9 +86,9 @@ func Exit() {
 }
 
 func Subtree(oid string) {
-	node, ok := gosmi.GetNode(oid)
-	if !ok {
-		fmt.Println("Invalid OID")
+	node, err := gosmi.GetNode(oid)
+	if err != nil {
+		fmt.Printf("Subtree Error: %s", err)
 		return
 	}
 
@@ -100,9 +100,9 @@ func Subtree(oid string) {
 
 func ModuleTrees() {
 	for _, module := range modules {
-		m, ok := gosmi.GetModule(module)
-		if !ok {
-			fmt.Printf("Could not display %s\n", module)
+		m, err := gosmi.GetModule(module)
+		if err != nil {
+			fmt.Printf("Module Trees Error: %s\n", err)
 			continue
 		}
 

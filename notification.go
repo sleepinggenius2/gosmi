@@ -20,7 +20,7 @@ func (n Node) AsNotification() Notification {
 }
 
 func (n Node) GetNotificationObjects() (objects []Node) {
-	for element := C.smiGetFirstElement(n.SmiNode); element != nil; element = C.smiGetNextElement(element) {
+	for element := C.smiGetFirstElement(n.smiNode); element != nil; element = C.smiGetNextElement(element) {
 		object := C.smiGetElementNode(element)
 		if object == nil {
 			// TODO: error

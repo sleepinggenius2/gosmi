@@ -26,7 +26,7 @@ func (t Node) AsTable() Table {
 }
 
 func (t Node) getRow() (row *C.struct_SmiNode) {
-	row = C.smiGetFirstChildNode(t.SmiNode)
+	row = C.smiGetFirstChildNode(t.smiNode)
 	if row == nil {
 		return
 	}

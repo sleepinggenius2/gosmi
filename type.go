@@ -31,7 +31,7 @@ type Range struct {
 }
 
 type Type struct {
-	SmiType     *C.struct_SmiType `json:"-"`
+	smiType     *C.struct_SmiType
 	BaseType    types.BaseType
 	Decl        types.Decl
 	Description string
@@ -49,7 +49,7 @@ func (t *Type) getEnum() {
 		return
 	}
 
-	smiNamedNumber := C.smiGetFirstNamedNumber(t.SmiType)
+	smiNamedNumber := C.smiGetFirstNamedNumber(t.smiType)
 	if smiNamedNumber == nil {
 		return
 	}
@@ -69,7 +69,7 @@ func (t *Type) getEnum() {
 }
 
 func (t Type) GetModule() (module Module) {
-	smiModule := C.smiGetTypeModule(t.SmiType)
+	smiModule := C.smiGetTypeModule(t.smiType)
 	return CreateModule(smiModule)
 }
 
@@ -79,7 +79,7 @@ func (t *Type) getRanges() {
 	}
 
 	ranges := make([]Range, 0)
-	for smiRange := C.smiGetFirstRange(t.SmiType); smiRange != nil; smiRange = C.smiGetNextRange(smiRange) {
+	for smiRange := C.smiGetFirstRange(t.smiType); smiRange != nil; smiRange = C.smiGetNextRange(smiRange) {
 		r := Range{
 			BaseType: types.BaseType(smiRange.minValue.basetype),
 			MinValue: convertValue(smiRange.minValue),
@@ -98,12 +98,20 @@ func (t Type) String() string {
 	return fmt.Sprintf("Type[%s Status=%s, Format=%s, Units=%s]", typeStr, t.Status, t.Format, t.Units)
 }
 
+func (t Type) GetRaw() (outType *C.struct_SmiType) {
+	return t.smiType
+}
+
+func (t *Type) SetRaw(smiType *C.struct_SmiType) {
+	t.smiType = smiType
+}
+
 func CreateType(smiType *C.struct_SmiType) (outType Type) {
 	if smiType == nil {
 		return
 	}
 
-	outType.SmiType = smiType
+	outType.SetRaw(smiType)
 	outType.BaseType = types.BaseType(smiType.basetype)
 
 	if smiType.name == nil {
