@@ -11,17 +11,20 @@ import "github.com/sleepinggenius2/gosmi/types"
 
 type Table struct {
 	Node
-	Columns map[string]Node
-	Implied bool
-	Index []Node
+	Columns     map[string]Node
+	ColumnOrder []string
+	Implied     bool
+	Index       []Node
 }
 
 func (t Node) AsTable() Table {
+	columns, columnOrder := t.GetColumns()
 	return Table{
-		Node: t,
-		Columns: t.GetColumns(),
-		Implied: t.GetImplied(),
-		Index: t.GetIndex(),
+		Node:        t,
+		Columns:     columns,
+		ColumnOrder: columnOrder,
+		Implied:     t.GetImplied(),
+		Index:       t.GetIndex(),
 	}
 }
 
@@ -39,13 +42,14 @@ func (t Node) getRow() (row *C.struct_SmiNode) {
 	return
 }
 
-func (t Node) GetColumns() (columns map[string]Node) {
+func (t Node) GetColumns() (columns map[string]Node, columnOrder []string) {
 	row := t.getRow()
 	if row == nil {
 		return
 	}
 
 	columns = make(map[string]Node)
+	columnOrder = make([]string, 0, 2)
 
 	for smiColumn := C.smiGetFirstChildNode(row); smiColumn != nil; smiColumn = C.smiGetNextChildNode(smiColumn) {
 		if types.NodeKind(smiColumn.nodekind) != types.NodeColumn {
@@ -54,6 +58,7 @@ func (t Node) GetColumns() (columns map[string]Node) {
 		}
 		column := CreateNode(smiColumn)
 		columns[column.Name] = column
+		columnOrder = append(columnOrder, column.Name)
 	}
 	return
 }
@@ -73,7 +78,17 @@ func (t Node) GetIndex() (index []Node) {
 		return
 	}
 
-	if types.IndexKind(row.indexkind) != types.IndexIndex {
+	if types.IndexKind(row.indexkind) == types.IndexAugment {
+		row = C.smiGetRelatedNode(row)
+		if row == nil {
+			return
+		}
+
+		if types.NodeKind(row.nodekind) != types.NodeRow {
+			// TODO: error
+			return
+		}
+	} else if types.IndexKind(row.indexkind) != types.IndexIndex {
 		// TODO: unsupported
 		return
 	}
