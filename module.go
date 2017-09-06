@@ -55,6 +55,10 @@ func (m Module) GetImports() (imports []Import) {
 	return
 }
 
+func (m Module) GetNode(name string) (node Node, err error) {
+	return GetNode(name, m)
+}
+
 func (m Module) GetNodes(kind ...types.NodeKind) (nodes []Node) {
 	nodeKind := types.NodeAny
 	if len(kind) > 0 && kind[0] != types.NodeUnknown {
