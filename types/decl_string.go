@@ -71,14 +71,14 @@ var _DeclNameToValue_map = map[string]Decl{
 	_Decl_name_2[95:100]:  47,
 }
 
-func DeclString(s string) (Decl, error) {
+func DeclFromString(s string) (Decl, error) {
 	if val, ok := _DeclNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Decl values", s)
 }
 
-func DeclList() []Decl {
+func DeclAsList() []Decl {
 	list := make([]Decl, len(_DeclNameToValue_map))
 	idx := 0
 	for _, v := range _DeclNameToValue_map {
@@ -88,7 +88,7 @@ func DeclList() []Decl {
 	return list
 }
 
-func DeclListString() []string {
+func DeclAsListString() []string {
 	list := make([]string, len(_DeclNameToValue_map))
 	idx := 0
 	for k := range _DeclNameToValue_map {
@@ -99,7 +99,7 @@ func DeclListString() []string {
 }
 
 func DeclIsValid(t Decl) bool {
-	for _, v := range DeclList() {
+	for _, v := range DeclAsList() {
 		if t == v {
 			return true
 		}
@@ -118,6 +118,6 @@ func (i *Decl) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = DeclString(s)
+	*i, err = DeclFromString(s)
 	return err
 }

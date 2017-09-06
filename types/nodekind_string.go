@@ -70,14 +70,14 @@ var _NodeKindNameToValue_map = map[string]NodeKind{
 	_NodeKind_name_8[0:3]:   65535,
 }
 
-func NodeKindString(s string) (NodeKind, error) {
+func NodeKindFromString(s string) (NodeKind, error) {
 	if val, ok := _NodeKindNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to NodeKind values", s)
 }
 
-func NodeKindList() []NodeKind {
+func NodeKindAsList() []NodeKind {
 	list := make([]NodeKind, len(_NodeKindNameToValue_map))
 	idx := 0
 	for _, v := range _NodeKindNameToValue_map {
@@ -87,7 +87,7 @@ func NodeKindList() []NodeKind {
 	return list
 }
 
-func NodeKindListString() []string {
+func NodeKindAsListString() []string {
 	list := make([]string, len(_NodeKindNameToValue_map))
 	idx := 0
 	for k := range _NodeKindNameToValue_map {
@@ -98,7 +98,7 @@ func NodeKindListString() []string {
 }
 
 func NodeKindIsValid(t NodeKind) bool {
-	for _, v := range NodeKindList() {
+	for _, v := range NodeKindAsList() {
 		if t == v {
 			return true
 		}
@@ -117,6 +117,6 @@ func (i *NodeKind) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = NodeKindString(s)
+	*i, err = NodeKindFromString(s)
 	return err
 }

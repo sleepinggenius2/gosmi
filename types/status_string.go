@@ -27,14 +27,14 @@ var _StatusNameToValue_map = map[string]Status{
 	_Status_name[41:49]: 5,
 }
 
-func StatusString(s string) (Status, error) {
+func StatusFromString(s string) (Status, error) {
 	if val, ok := _StatusNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Status values", s)
 }
 
-func StatusList() []Status {
+func StatusAsList() []Status {
 	list := make([]Status, len(_StatusNameToValue_map))
 	idx := 0
 	for _, v := range _StatusNameToValue_map {
@@ -44,7 +44,7 @@ func StatusList() []Status {
 	return list
 }
 
-func StatusListString() []string {
+func StatusAsListString() []string {
 	list := make([]string, len(_StatusNameToValue_map))
 	idx := 0
 	for k := range _StatusNameToValue_map {
@@ -55,7 +55,7 @@ func StatusListString() []string {
 }
 
 func StatusIsValid(t Status) bool {
-	for _, v := range StatusList() {
+	for _, v := range StatusAsList() {
 		if t == v {
 			return true
 		}
@@ -74,6 +74,6 @@ func (i *Status) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = StatusString(s)
+	*i, err = StatusFromString(s)
 	return err
 }

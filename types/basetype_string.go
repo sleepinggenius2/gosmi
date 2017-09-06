@@ -34,14 +34,14 @@ var _BaseTypeNameToValue_map = map[string]BaseType{
 	_BaseType_name[102:109]: 12,
 }
 
-func BaseTypeString(s string) (BaseType, error) {
+func BaseTypeFromString(s string) (BaseType, error) {
 	if val, ok := _BaseTypeNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to BaseType values", s)
 }
 
-func BaseTypeList() []BaseType {
+func BaseTypeAsList() []BaseType {
 	list := make([]BaseType, len(_BaseTypeNameToValue_map))
 	idx := 0
 	for _, v := range _BaseTypeNameToValue_map {
@@ -51,7 +51,7 @@ func BaseTypeList() []BaseType {
 	return list
 }
 
-func BaseTypeListString() []string {
+func BaseTypeAsListString() []string {
 	list := make([]string, len(_BaseTypeNameToValue_map))
 	idx := 0
 	for k := range _BaseTypeNameToValue_map {
@@ -62,7 +62,7 @@ func BaseTypeListString() []string {
 }
 
 func BaseTypeIsValid(t BaseType) bool {
-	for _, v := range BaseTypeList() {
+	for _, v := range BaseTypeAsList() {
 		if t == v {
 			return true
 		}
@@ -81,6 +81,6 @@ func (i *BaseType) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = BaseTypeString(s)
+	*i, err = BaseTypeFromString(s)
 	return err
 }

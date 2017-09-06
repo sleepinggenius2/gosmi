@@ -27,14 +27,14 @@ var _IndexKindNameToValue_map = map[string]IndexKind{
 	_IndexKind_name[32:38]: 5,
 }
 
-func IndexKindString(s string) (IndexKind, error) {
+func IndexKindFromString(s string) (IndexKind, error) {
 	if val, ok := _IndexKindNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to IndexKind values", s)
 }
 
-func IndexKindList() []IndexKind {
+func IndexKindAsList() []IndexKind {
 	list := make([]IndexKind, len(_IndexKindNameToValue_map))
 	idx := 0
 	for _, v := range _IndexKindNameToValue_map {
@@ -44,7 +44,7 @@ func IndexKindList() []IndexKind {
 	return list
 }
 
-func IndexKindListString() []string {
+func IndexKindAsListString() []string {
 	list := make([]string, len(_IndexKindNameToValue_map))
 	idx := 0
 	for k := range _IndexKindNameToValue_map {
@@ -55,7 +55,7 @@ func IndexKindListString() []string {
 }
 
 func IndexKindIsValid(t IndexKind) bool {
-	for _, v := range IndexKindList() {
+	for _, v := range IndexKindAsList() {
 		if t == v {
 			return true
 		}
@@ -74,6 +74,6 @@ func (i *IndexKind) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = IndexKindString(s)
+	*i, err = IndexKindFromString(s)
 	return err
 }

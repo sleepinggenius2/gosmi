@@ -55,14 +55,14 @@ var _RenderNameToValue_map = map[string]Render{
 	_Render_name_5[0:3]:  255,
 }
 
-func RenderString(s string) (Render, error) {
+func RenderFromString(s string) (Render, error) {
 	if val, ok := _RenderNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Render values", s)
 }
 
-func RenderList() []Render {
+func RenderAsList() []Render {
 	list := make([]Render, len(_RenderNameToValue_map))
 	idx := 0
 	for _, v := range _RenderNameToValue_map {
@@ -72,7 +72,7 @@ func RenderList() []Render {
 	return list
 }
 
-func RenderListString() []string {
+func RenderAsListString() []string {
 	list := make([]string, len(_RenderNameToValue_map))
 	idx := 0
 	for k := range _RenderNameToValue_map {
@@ -83,7 +83,7 @@ func RenderListString() []string {
 }
 
 func RenderIsValid(t Render) bool {
-	for _, v := range RenderList() {
+	for _, v := range RenderAsList() {
 		if t == v {
 			return true
 		}
@@ -102,6 +102,6 @@ func (i *Render) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = RenderString(s)
+	*i, err = RenderFromString(s)
 	return err
 }

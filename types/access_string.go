@@ -31,14 +31,14 @@ var _AccessNameToValue_map = map[string]Access{
 	_Access_name[87:96]: 9,
 }
 
-func AccessString(s string) (Access, error) {
+func AccessFromString(s string) (Access, error) {
 	if val, ok := _AccessNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Access values", s)
 }
 
-func AccessList() []Access {
+func AccessAsList() []Access {
 	list := make([]Access, len(_AccessNameToValue_map))
 	idx := 0
 	for _, v := range _AccessNameToValue_map {
@@ -48,7 +48,7 @@ func AccessList() []Access {
 	return list
 }
 
-func AccessListString() []string {
+func AccessAsListString() []string {
 	list := make([]string, len(_AccessNameToValue_map))
 	idx := 0
 	for k := range _AccessNameToValue_map {
@@ -59,7 +59,7 @@ func AccessListString() []string {
 }
 
 func AccessIsValid(t Access) bool {
-	for _, v := range AccessList() {
+	for _, v := range AccessAsList() {
 		if t == v {
 			return true
 		}
@@ -78,6 +78,6 @@ func (i *Access) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = AccessString(s)
+	*i, err = AccessFromString(s)
 	return err
 }

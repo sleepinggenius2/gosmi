@@ -26,14 +26,14 @@ var _LanguageNameToValue_map = map[string]Language{
 	_Language_name[22:26]: 4,
 }
 
-func LanguageString(s string) (Language, error) {
+func LanguageFromString(s string) (Language, error) {
 	if val, ok := _LanguageNameToValue_map[s]; ok {
 		return val, nil
 	}
 	return 0, fmt.Errorf("%s does not belong to Language values", s)
 }
 
-func LanguageList() []Language {
+func LanguageAsList() []Language {
 	list := make([]Language, len(_LanguageNameToValue_map))
 	idx := 0
 	for _, v := range _LanguageNameToValue_map {
@@ -43,7 +43,7 @@ func LanguageList() []Language {
 	return list
 }
 
-func LanguageListString() []string {
+func LanguageAsListString() []string {
 	list := make([]string, len(_LanguageNameToValue_map))
 	idx := 0
 	for k := range _LanguageNameToValue_map {
@@ -54,7 +54,7 @@ func LanguageListString() []string {
 }
 
 func LanguageIsValid(t Language) bool {
-	for _, v := range LanguageList() {
+	for _, v := range LanguageAsList() {
 		if t == v {
 			return true
 		}
@@ -73,6 +73,6 @@ func (i *Language) UnmarshalJSON(data []byte) error {
 	}
 
 	var err error
-	*i, err = LanguageString(s)
+	*i, err = LanguageFromString(s)
 	return err
 }
