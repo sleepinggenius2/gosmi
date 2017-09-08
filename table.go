@@ -29,8 +29,15 @@ func (t Node) AsTable() Table {
 }
 
 func (t Node) getRow() (row *C.struct_SmiNode) {
-	row = C.smiGetFirstChildNode(t.smiNode)
-	if row == nil {
+	switch t.Kind {
+	case types.NodeRow:
+		row = t.GetRaw()
+	case types.NodeTable:
+		row = C.smiGetFirstChildNode(t.smiNode)
+		if row == nil {
+			return
+		}
+	default:
 		return
 	}
 
@@ -40,6 +47,14 @@ func (t Node) getRow() (row *C.struct_SmiNode) {
 	}
 
 	return
+}
+
+func (t Node) GetRow() (row Node) {
+	smiRow := t.getRow()
+	if smiRow == nil {
+		return
+	}
+	return CreateNode(smiRow)
 }
 
 func (t Node) GetColumns() (columns map[string]Node, columnOrder []string) {
