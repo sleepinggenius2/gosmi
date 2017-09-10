@@ -21,13 +21,13 @@ type Enum struct {
 
 type NamedNumber struct {
 	Name  string
-	Value interface{}
+	Value int64
 }
 
 type Range struct {
 	BaseType types.BaseType
-	MinValue interface{}
-	MaxValue interface{}
+	MinValue int64
+	MaxValue int64
 }
 
 type Type struct {
@@ -152,18 +152,16 @@ func CreateTypeFromNode(smiNode *C.struct_SmiNode) (outType *Type) {
 	return
 }
 
-func convertValue(value C.struct_SmiValue) (outValue interface{}) {
+func convertValue(value C.struct_SmiValue) (outValue int64) {
 	switch types.BaseType(value.basetype) {
 	case types.BaseTypeInteger32:
-		tempValue := binary.LittleEndian.Uint32(value.value[:4])
-		outValue = int32(tempValue)
-	case types.BaseTypeUnsigned32:
-		outValue = binary.LittleEndian.Uint32(value.value[:4])
+		outValue = int64(int32(binary.LittleEndian.Uint32(value.value[:4])))
 	case types.BaseTypeInteger64:
-		tempValue := binary.LittleEndian.Uint64(value.value[:8])
-		outValue = int64(tempValue)
+		outValue = int64(binary.LittleEndian.Uint64(value.value[:8]))
+	case types.BaseTypeUnsigned32:
+		outValue = int64(binary.LittleEndian.Uint32(value.value[:4]))
 	case types.BaseTypeUnsigned64:
-		outValue = binary.LittleEndian.Uint64(value.value[:8])
+		outValue = int64(binary.LittleEndian.Uint64(value.value[:8]))
 	}
 	return
 }

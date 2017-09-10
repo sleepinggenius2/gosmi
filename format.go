@@ -21,6 +21,7 @@ const (
 	FormatBits
 	FormatString
 	FormatUnits
+	FormatDurationShort
 	FormatAll      Format = 0xff & ^FormatUnits
 )
 
@@ -40,169 +41,247 @@ func (v Value) String() string {
 type ValueFormatter func(interface{}) Value
 
 func (n Node) GetValueFormatter(flags ...Format) (f ValueFormatter) {
+	return n.Type.GetValueFormatter(flags...)
+}
+
+func (t Type) GetValueFormatter(flags ...Format) (f ValueFormatter) {
 	formatFlags := FormatNone
 	for _, flag := range flags {
 		formatFlags |= flag
 	}
-	if n.Type.BaseType == types.BaseTypeOctetString {
-		f = func(value interface{}) (v Value) {
-			v.Format = formatFlags
-			var bytes []byte
-			switch val := value.(type) {
-			case []int:
-				bytes = make([]byte, len(val))
-				for i, b := range val {
-					bytes[i] = byte(b)
-				}
-			case []byte:
-				bytes = val
-			default:
-				v.Raw = val
-				if formatFlags & FormatString != 0 {
-					v.Formatted = fmt.Sprintf("%v", val)
-				}
-				return
-			}
-			v.Raw = bytes
-			if formatFlags & FormatString == 0 {
-				return
-			}
-			format := n.Type.Format
-			if n.Type.Name == "IpAddress" {
-				format = "1d."
-			} else if n.Type.Name == "InetAddress" {
-				if bytes[0] == 0x04 {
-					format = "*1d."
-				} else {
-					format = "*1x:"
-				}
-			} else if n.Type.Name == "IpV4orV6Addr" {
-				if len(bytes) == 4 {
-					format = "1d."
-				} else {
-					format = "1x:"
-				}
-			}
-			formatted := StringDisplayHint(format, bytes)
-			if formatFlags & FormatUnits != 0 && n.Type.Units != "" {
-				formatted += " " + n.Type.Units
-			}
-			v.Formatted = formatted
-			return
+	switch t.BaseType {
+	case types.BaseTypeOctetString:
+		switch t.Name {
+		case "IpAddress", "InetAddress", "IpV4orV6Addr":
+			return GetInetAddressFormatter(formatFlags)
 		}
-		return
-	} else if n.Type.Name == "TimeTicks" || n.Type.Name == "TimeInterval" || n.Type.Name == "TimeStamp" {
-		f = func(value interface{}) (v Value) {
-			v.Format = formatFlags
-			duration := time.Duration(int64(value.(int)) * 1e7)
-			v.Raw = duration
-			v.Formatted = DurationFormat(duration)
-			return
+		return GetOctetStringFormatter(formatFlags, t.Format)
+	case types.BaseTypeBits:
+		if t.Enum == nil {
+			return GetBitsFormatter(formatFlags)
 		}
-		return
+		return GetEnumBitsFormatter(formatFlags, t.Enum.Values)
+	case types.BaseTypeEnum:
+		return GetEnumFormatter(formatFlags, t.Enum.Values)
 	}
-	if n.Type.Enum == nil {
-		f = func(value interface{}) (v Value) {
-			v.Format = formatFlags
-			v.Raw = value
-			if formatFlags == FormatNone {
-				return
-			}
-			if n.Type.BaseType == types.BaseTypeBits {
-				if formatFlags & FormatBits != 0 {
-					v.Formatted = fmt.Sprintf("% X", value.([]byte))
-				}
-				return
-			}
-			var intVal int64
-			switch tempVal := value.(type) {
-			case int64:
-				intVal = tempVal
-			default:
-				intVal = gosnmp.ToBigInt(tempVal).Int64()
-			}
-			v.Raw = intVal
-			formatted := IntegerDisplayHint(n.Type.Format, intVal)
-			if formatFlags & FormatUnits != 0 && n.Type.Units != "" {
-				formatted += " " + n.Type.Units
-			}
-			v.Formatted = formatted
-			return
-		}
-		return
+	switch t.Name {
+	case "TimeTicks", "TimeInterval", "TimeStamp":
+		return GetDurationFormatter(formatFlags)
 	}
-	var enums map[int64]string
-	enums = make(map[int64]string, len(n.Type.Enum.Values))
-	for _, enum := range n.Type.Enum.Values {
-		intVal := gosnmp.ToBigInt(enum.Value).Int64()
-		enums[intVal] = enum.Name
-	}
-	f = func(value interface{}) (v Value) {
-		v.Format = formatFlags
+	return GetIntFormatter(formatFlags, t.Format)
+}
+
+func GetBitsFormatter(flags Format) (f ValueFormatter) {
+	return func(value interface{}) (v Value) {
+		v.Format = flags
 		v.Raw = value
-		if formatFlags == FormatNone {
-			return
-		}
-		if n.Type.BaseType == types.BaseTypeBits {
-			octets := value.([]byte)
-			if formatFlags & FormatBits != 0 {
-				v.Formatted = fmt.Sprintf("% X", octets)
-			}
-			if (formatFlags & FormatEnumName) + (formatFlags & FormatEnumValue) == 0 {
-				return
-			}
-			bitsFormatted := make([]string, 0, 8*len(octets))
-			for i, octet := range octets {
-				for j := 7; j >= 0; j-- {
-					if octet&(1<<uint(j)) != 0 {
-						bit := 8*i + (7 - j)
-						var bitFormatted string
-						if formatFlags & FormatEnumName != 0 {
-							enumName, ok := enums[int64(bit)]
-							if !ok {
-								enumName = "unknown"
-							}
-							bitFormatted = enumName
-							if formatFlags & FormatEnumValue != 0 || !ok {
-								bitFormatted += "(" + fmt.Sprintf("%d", bit) + ")"
-							}
-						} else if formatFlags & FormatEnumValue != 0 {
-							bitFormatted = fmt.Sprintf("%d", bit)
-						}
-						bitsFormatted = append(bitsFormatted, bitFormatted)
-					}
-				}
-			}
-			if v.Formatted == "" {
-				v.Formatted = strings.Join(bitsFormatted, " ")
-			} else {
-				v.Formatted += "[" + strings.Join(bitsFormatted, " ") + "]"
-			}
-		} else {
-			var intVal int64
-			switch tempVal := value.(type) {
-			case int64:
-				intVal = tempVal
-			default:
-				intVal = gosnmp.ToBigInt(tempVal).Int64()
-			}
-			v.Raw = intVal
-			if formatFlags & FormatEnumName != 0 {
-				enumName, ok := enums[intVal]
-				if !ok {
-					enumName = "unknown"
-				}
-				v.Formatted = enumName
-				if formatFlags & FormatEnumValue != 0 {
-					v.Formatted += fmt.Sprintf("(%d)", intVal)
-				}
-			} else if formatFlags & FormatEnumValue != 0 {
-				v.Formatted = fmt.Sprintf("%d", intVal)
+		if flags & FormatBits != 0 {
+			if bytes, ok := value.([]byte); ok {
+				v.Formatted = fmt.Sprintf("% X", bytes)
 			}
 		}
 		return
+	}
+}
+
+func GetDurationFormatter(flags Format) (f ValueFormatter) {
+	return func(value interface{}) (v Value) {
+		duration := time.Duration(int64(value.(int)) * 1e7)
+		v.Format = flags
+		v.Raw = duration
+		if flags & FormatDurationShort > 0 {
+			v.Formatted = DurationFormat(duration)
+		} else {
+			v.Formatted = DurationFormatLong(duration)
+		}
+		return
+	}
+}
+
+func GetEnumFormatter(flags Format, values []NamedNumber) (f ValueFormatter) {
+	enums := make(map[int64]string, len(values))
+	for _, enum := range values {
+		enums[enum.Value] = enum.Name
+	}
+	return func(value interface{}) (v Value) {
+		v.Format = flags
+		v.Raw = value
+		if flags == FormatNone {
+			return
+		}
+		var intVal int64
+		switch tempVal := value.(type) {
+		case int64:
+			intVal = tempVal
+		default:
+			intVal = gosnmp.ToBigInt(tempVal).Int64()
+		}
+		v.Raw = intVal
+		if flags & FormatEnumName != 0 {
+			enumName, ok := enums[intVal]
+			if !ok {
+				enumName = "unknown"
+			}
+			v.Formatted = enumName
+			if flags & FormatEnumValue != 0 {
+				v.Formatted += fmt.Sprintf("(%d)", intVal)
+			}
+		} else if flags & FormatEnumValue != 0 {
+			v.Formatted = fmt.Sprintf("%d", intVal)
+		}
+		return
+	}
+}
+
+func GetEnumBitsFormatter(flags Format, values []NamedNumber) (f ValueFormatter) {
+	enums := make(map[uint64]string, len(values))
+	for _, enum := range values {
+		enums[uint64(enum.Value)] = enum.Name
+	}
+	return func(value interface{}) (v Value) {
+		v.Format = flags
+		v.Raw = value
+		if flags == FormatNone {
+			return
+		}
+		octets := value.([]byte)
+		if flags & FormatBits != 0 {
+			v.Formatted = fmt.Sprintf("% X", octets)
+		}
+		if (flags & FormatEnumName) + (flags & FormatEnumValue) == 0 {
+			return
+		}
+		bitsFormatted := make([]string, 0, 8*len(octets))
+		for i, octet := range octets {
+			for j := 7; j >= 0; j-- {
+				if octet&(1<<uint(j)) != 0 {
+					bit := uint64(8*i + (7 - j))
+					var bitFormatted string
+					if flags & FormatEnumName != 0 {
+						enumName, ok := enums[bit]
+						if !ok {
+							enumName = "unknown"
+						}
+						bitFormatted = enumName
+						if flags & FormatEnumValue != 0 || !ok {
+							bitFormatted += "(" + fmt.Sprintf("%d", bit) + ")"
+						}
+					} else if flags & FormatEnumValue != 0 {
+						bitFormatted = fmt.Sprintf("%d", bit)
+					}
+					bitsFormatted = append(bitsFormatted, bitFormatted)
+				}
+			}
+		}
+		if v.Formatted == "" {
+			v.Formatted = strings.Join(bitsFormatted, " ")
+		} else {
+			v.Formatted += "[" + strings.Join(bitsFormatted, " ") + "]"
+		}
+		return
+	}
+}
+
+func getBytes(value interface{}) (bytes []byte, ok bool) {
+	switch val := value.(type) {
+	case []int:
+		bytes = make([]byte, len(val))
+		for i, b := range val {
+			bytes[i] = byte(b)
+		}
+		ok = true
+	case []byte:
+		bytes = val
+		ok = true
 	}
 	return
+}
+
+func GetInetAddressFormatter(flags Format) (f ValueFormatter) {
+	return func(value interface{}) (v Value) {
+		v.Format = flags
+		bytes, ok := getBytes(value)
+		if !ok {
+			v.Raw = value
+			return
+		}
+		v.Raw = bytes
+		if flags & FormatString == 0 {
+			return
+		}
+		numBytes := len(bytes)
+		if numBytes == 5 || numBytes == 17 {
+			bytes = bytes[1:]
+			numBytes--
+		}
+		var format string
+		if numBytes == 4 {
+			format = "1d.1d.1d.1d"
+		} else {
+			format = "2x:2x:2x:2x:2x:2x:2x:2x%4d"
+		}
+		v.Formatted = StringDisplayHint(format, bytes)
+		return
+	}
+}
+
+func GetIntFormatter(flags Format, format string) (f ValueFormatter) {
+	return func(value interface{}) (v Value) {
+		var intVal int64
+		switch tempVal := value.(type) {
+		case int64:
+			intVal = tempVal
+		default:
+			intVal = gosnmp.ToBigInt(tempVal).Int64()
+		}
+		return Value{
+			Format:    flags,
+			Formatted: IntegerDisplayHint(format, intVal),
+			Raw:       intVal,
+		}
+	}
+}
+
+func GetOctetStringFormatter(flags Format, format string) (f ValueFormatter) {
+	return func(value interface{}) (v Value) {
+		v.Format = flags
+		var bytes []byte
+		switch val := value.(type) {
+		case []int:
+			bytes = make([]byte, len(val))
+			for i, b := range val {
+				bytes[i] = byte(b)
+			}
+		case []byte:
+			bytes = val
+		default:
+			v.Raw = val
+			if flags & FormatString != 0 {
+				v.Formatted = fmt.Sprintf("%v", val)
+			}
+			return
+		}
+		v.Raw = bytes
+		if flags & FormatString == 0 {
+			return
+		}
+		switch format {
+		case "InetAddress":
+			if len(bytes) > 0 && bytes[0] == 0x04 {
+				format = "*1d."
+			} else {
+				format = "*1x:"
+			}
+		case "IpV4orV6Addr":
+			if len(bytes) == 4 {
+				format = "1d."
+			} else {
+				format = "1x:"
+			}
+		}
+		v.Formatted = StringDisplayHint(format, bytes)
+		return
+	}
 }
 
 func IntegerDisplayHint(format string, value int64) (formatted string) {
@@ -249,8 +328,10 @@ func StringDisplayHint(format string, value []byte) (formatted string) {
 	formats := parseHint(format)
 	formatsLen := len(formats) - 1
 	//fmt.Printf("%s = %+v\n", format, formats)
-	var i, repeatCount, lengthCount int
-	var currValue uint64
+	var (
+		i, repeatCount, lengthCount int
+		currValue uint64
+	)
 	currFormat := formats[i]
 	for j, c := range value {
 		if currFormat.Repeat && repeatCount == 0 {

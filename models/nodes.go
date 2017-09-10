@@ -41,13 +41,6 @@ type ColumnNode struct {
 
 type NotificationNode struct {
 	BaseNode
+	Objects []ScalarNode
 }
 
-type NodeType struct {
-	BaseType  types.BaseType
-	Enum      *gosmi.Enum
-	Format    string
-	Formatter gosmi.ValueFormatter
-	Name      string
-	Ranges    []gosmi.Range
-}
