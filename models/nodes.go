@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/sleepinggenius2/gosmi"
-	"github.com/sleepinggenius2/gosmi/types"
 )
 
 type BaseNode struct {
@@ -25,14 +24,14 @@ func (t TableNode) Columns() []ColumnNode {
 	return t.Row.Columns
 }
 
-func (t TableNode) Index() []ScalarNode {
+func (t TableNode) Index() []ColumnNode {
 	return t.Row.Index
 }
 
 type RowNode struct {
 	BaseNode
 	Columns []ColumnNode
-	Index   []ScalarNode
+	Index   []ColumnNode
 }
 
 type ColumnNode struct {
@@ -43,4 +42,3 @@ type NotificationNode struct {
 	BaseNode
 	Objects []ScalarNode
 }
-
