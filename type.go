@@ -9,42 +9,17 @@ import "C"
 
 import (
 	"encoding/binary"
-	"fmt"
 
+	"github.com/sleepinggenius2/gosmi/models"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
-type Enum struct {
-	BaseType types.BaseType
-	Values   []NamedNumber
+type SmiType struct {
+	models.Type
+	smiType *C.struct_SmiType
 }
 
-type NamedNumber struct {
-	Name  string
-	Value int64
-}
-
-type Range struct {
-	BaseType types.BaseType
-	MinValue int64
-	MaxValue int64
-}
-
-type Type struct {
-	smiType     *C.struct_SmiType
-	BaseType    types.BaseType
-	Decl        types.Decl
-	Description string
-	Enum        *Enum
-	Format      string
-	Name        string
-	Ranges      []Range
-	Reference   string
-	Status      types.Status
-	Units       string
-}
-
-func (t *Type) getEnum() {
+func (t *SmiType) getEnum() {
 	if t.BaseType == types.BaseTypeUnknown || !(t.BaseType == types.BaseTypeEnum || t.BaseType == types.BaseTypeBits) {
 		return
 	}
@@ -54,11 +29,11 @@ func (t *Type) getEnum() {
 		return
 	}
 
-	enum := Enum{
+	enum := models.Enum{
 		BaseType: types.BaseType(smiNamedNumber.value.basetype),
 	}
 	for ; smiNamedNumber != nil; smiNamedNumber = C.smiGetNextNamedNumber(smiNamedNumber) {
-		namedNumber := NamedNumber{
+		namedNumber := models.NamedNumber{
 			Name:  C.GoString(smiNamedNumber.name),
 			Value: convertValue(smiNamedNumber.value),
 		}
@@ -68,19 +43,19 @@ func (t *Type) getEnum() {
 	return
 }
 
-func (t Type) GetModule() (module Module) {
+func (t SmiType) GetModule() (module SmiModule) {
 	smiModule := C.smiGetTypeModule(t.smiType)
 	return CreateModule(smiModule)
 }
 
-func (t *Type) getRanges() {
+func (t *SmiType) getRanges() {
 	if t.BaseType == types.BaseTypeUnknown {
 		return
 	}
 
-	ranges := make([]Range, 0)
+	ranges := make([]models.Range, 0)
 	for smiRange := C.smiGetFirstRange(t.smiType); smiRange != nil; smiRange = C.smiGetNextRange(smiRange) {
-		r := Range{
+		r := models.Range{
 			BaseType: types.BaseType(smiRange.minValue.basetype),
 			MinValue: convertValue(smiRange.minValue),
 			MaxValue: convertValue(smiRange.maxValue),
@@ -90,23 +65,19 @@ func (t *Type) getRanges() {
 	t.Ranges = ranges
 }
 
-func (t Type) String() string {
-	typeStr := t.Name
-	if t.BaseType.String() != typeStr {
-		typeStr += "<" + t.BaseType.String() + ">"
-	}
-	return fmt.Sprintf("Type[%s Status=%s, Format=%s, Units=%s]", typeStr, t.Status, t.Format, t.Units)
+func (t SmiType) String() string {
+	return t.Type.String()
 }
 
-func (t Type) GetRaw() (outType *C.struct_SmiType) {
+func (t SmiType) GetRaw() (outType *C.struct_SmiType) {
 	return t.smiType
 }
 
-func (t *Type) SetRaw(smiType *C.struct_SmiType) {
+func (t *SmiType) SetRaw(smiType *C.struct_SmiType) {
 	t.smiType = smiType
 }
 
-func CreateType(smiType *C.struct_SmiType) (outType Type) {
+func CreateType(smiType *C.struct_SmiType) (outType SmiType) {
 	if smiType == nil {
 		return
 	}
@@ -132,7 +103,7 @@ func CreateType(smiType *C.struct_SmiType) (outType Type) {
 	return
 }
 
-func CreateTypeFromNode(smiNode *C.struct_SmiNode) (outType *Type) {
+func CreateTypeFromNode(smiNode *C.struct_SmiNode) (outType *SmiType) {
 	smiType := C.smiGetNodeType(smiNode)
 
 	if smiType == nil {

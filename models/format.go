@@ -1,4 +1,4 @@
-package gosmi
+package models
 
 //go:generate enumer -type=Format -autotrimprefix -json
 
@@ -22,7 +22,7 @@ const (
 	FormatString
 	FormatUnits
 	FormatDurationShort
-	FormatAll      Format = 0xff & ^FormatUnits
+	FormatAll Format = 0xff & ^FormatUnits
 )
 
 type Value struct {
@@ -75,7 +75,7 @@ func GetBitsFormatter(flags Format) (f ValueFormatter) {
 	return func(value interface{}) (v Value) {
 		v.Format = flags
 		v.Raw = value
-		if flags & FormatBits != 0 {
+		if flags&FormatBits != 0 {
 			if bytes, ok := value.([]byte); ok {
 				v.Formatted = fmt.Sprintf("% X", bytes)
 			}
@@ -89,7 +89,7 @@ func GetDurationFormatter(flags Format) (f ValueFormatter) {
 		duration := time.Duration(int64(value.(int)) * 1e7)
 		v.Format = flags
 		v.Raw = duration
-		if flags & FormatDurationShort > 0 {
+		if flags&FormatDurationShort > 0 {
 			v.Formatted = DurationFormat(duration)
 		} else {
 			v.Formatted = DurationFormatLong(duration)
@@ -117,16 +117,16 @@ func GetEnumFormatter(flags Format, values []NamedNumber) (f ValueFormatter) {
 			intVal = gosnmp.ToBigInt(tempVal).Int64()
 		}
 		v.Raw = intVal
-		if flags & FormatEnumName != 0 {
+		if flags&FormatEnumName != 0 {
 			enumName, ok := enums[intVal]
 			if !ok {
 				enumName = "unknown"
 			}
 			v.Formatted = enumName
-			if flags & FormatEnumValue != 0 {
+			if flags&FormatEnumValue != 0 {
 				v.Formatted += fmt.Sprintf("(%d)", intVal)
 			}
-		} else if flags & FormatEnumValue != 0 {
+		} else if flags&FormatEnumValue != 0 {
 			v.Formatted = fmt.Sprintf("%d", intVal)
 		}
 		return
@@ -145,10 +145,10 @@ func GetEnumBitsFormatter(flags Format, values []NamedNumber) (f ValueFormatter)
 			return
 		}
 		octets := value.([]byte)
-		if flags & FormatBits != 0 {
+		if flags&FormatBits != 0 {
 			v.Formatted = fmt.Sprintf("% X", octets)
 		}
-		if (flags & FormatEnumName) + (flags & FormatEnumValue) == 0 {
+		if (flags&FormatEnumName)+(flags&FormatEnumValue) == 0 {
 			return
 		}
 		bitsFormatted := make([]string, 0, 8*len(octets))
@@ -157,16 +157,16 @@ func GetEnumBitsFormatter(flags Format, values []NamedNumber) (f ValueFormatter)
 				if octet&(1<<uint(j)) != 0 {
 					bit := uint64(8*i + (7 - j))
 					var bitFormatted string
-					if flags & FormatEnumName != 0 {
+					if flags&FormatEnumName != 0 {
 						enumName, ok := enums[bit]
 						if !ok {
 							enumName = "unknown"
 						}
 						bitFormatted = enumName
-						if flags & FormatEnumValue != 0 || !ok {
+						if flags&FormatEnumValue != 0 || !ok {
 							bitFormatted += "(" + fmt.Sprintf("%d", bit) + ")"
 						}
-					} else if flags & FormatEnumValue != 0 {
+					} else if flags&FormatEnumValue != 0 {
 						bitFormatted = fmt.Sprintf("%d", bit)
 					}
 					bitsFormatted = append(bitsFormatted, bitFormatted)
@@ -206,7 +206,7 @@ func GetInetAddressFormatter(flags Format) (f ValueFormatter) {
 			return
 		}
 		v.Raw = bytes
-		if flags & FormatString == 0 {
+		if flags&FormatString == 0 {
 			return
 		}
 		numBytes := len(bytes)
@@ -256,13 +256,13 @@ func GetOctetStringFormatter(flags Format, format string) (f ValueFormatter) {
 			bytes = val
 		default:
 			v.Raw = val
-			if flags & FormatString != 0 {
+			if flags&FormatString != 0 {
 				v.Formatted = fmt.Sprintf("%v", val)
 			}
 			return
 		}
 		v.Raw = bytes
-		if flags & FormatString == 0 {
+		if flags&FormatString == 0 {
 			return
 		}
 		switch format {
@@ -305,7 +305,7 @@ func IntegerDisplayHint(format string, value int64) (formatted string) {
 		if formatted[0] == '-' {
 			offset = 1
 		}
-		if formattedLen - offset <= decimals {
+		if formattedLen-offset <= decimals {
 			formatStr := "0.%0" + format[2:] + "s"
 			formatted = formatted[:offset] + fmt.Sprintf(formatStr, formatted[offset:])
 			break
@@ -330,7 +330,7 @@ func StringDisplayHint(format string, value []byte) (formatted string) {
 	//fmt.Printf("%s = %+v\n", format, formats)
 	var (
 		i, repeatCount, lengthCount int
-		currValue uint64
+		currValue                   uint64
 	)
 	currFormat := formats[i]
 	for j, c := range value {
@@ -344,7 +344,7 @@ func StringDisplayHint(format string, value []byte) (formatted string) {
 		}
 		lengthCount--
 		if currFormat.Numeric {
-			currValue = currValue<<8+uint64(c)
+			currValue = currValue<<8 + uint64(c)
 		} else {
 			formatted += fmt.Sprintf(currFormat.Format, c)
 		}
@@ -403,8 +403,8 @@ func parseHint(format string) (formats []StringHint) {
 	state := StateRepeat
 	var (
 		currFormat StringHint
-		c byte
-		i int
+		c          byte
+		i          int
 	)
 	for i < formatLen {
 		c = format[i]
@@ -476,7 +476,7 @@ func pluralizeCount(i int64, base string) string {
 }
 
 func DurationFormat(d time.Duration) string {
-	seconds := int64(d/time.Second)
+	seconds := int64(d / time.Second)
 	minutes := seconds / 60
 	hours := minutes / 60
 	days := hours / 24
@@ -486,14 +486,14 @@ func DurationFormat(d time.Duration) string {
 	if days > 0 {
 		format = strconv.FormatInt(days, 10) + "d "
 	}
-	if len(format) > 0 || hours % 24 > 0 {
-		format += strconv.FormatInt(hours % 24, 10) + "h "
+	if len(format) > 0 || hours%24 > 0 {
+		format += strconv.FormatInt(hours%24, 10) + "h "
 	}
-	if len(format) > 0 || minutes % 60 > 0 {
-		format += strconv.FormatInt(minutes % 60, 10) + "m "
+	if len(format) > 0 || minutes%60 > 0 {
+		format += strconv.FormatInt(minutes%60, 10) + "m "
 	}
-	if hours == 0 && seconds % 60 > 0 {
-		format += strconv.FormatInt(seconds % 60, 10) + "s"
+	if hours == 0 && seconds%60 > 0 {
+		format += strconv.FormatInt(seconds%60, 10) + "s"
 	}
 	if format == "" {
 		return "0s"
@@ -502,7 +502,7 @@ func DurationFormat(d time.Duration) string {
 }
 
 func DurationFormatLong(d time.Duration) string {
-	seconds := int64(d/time.Second)
+	seconds := int64(d / time.Second)
 	minutes := seconds / 60
 	hours := minutes / 60
 	days := hours / 24
@@ -512,14 +512,14 @@ func DurationFormatLong(d time.Duration) string {
 	if days > 0 {
 		format = pluralizeCount(days, "day") + " "
 	}
-	if hours % 24 > 0 {
-		format += pluralizeCount(hours % 24, "hour") + " "
+	if hours%24 > 0 {
+		format += pluralizeCount(hours%24, "hour") + " "
 	}
-	if minutes % 60 > 0 {
-		format += pluralizeCount(minutes % 60, "min") + " "
+	if minutes%60 > 0 {
+		format += pluralizeCount(minutes%60, "min") + " "
 	}
-	if seconds % 60 > 0 {
-		format += pluralizeCount(seconds % 60, "sec")
+	if seconds%60 > 0 {
+		format += pluralizeCount(seconds%60, "sec")
 	}
 	if format == "" {
 		return "0 secs"

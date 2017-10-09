@@ -10,17 +10,17 @@ import "C"
 import "github.com/sleepinggenius2/gosmi/types"
 
 type Table struct {
-	Node
-	Columns     map[string]Node
+	SmiNode
+	Columns     map[string]SmiNode
 	ColumnOrder []string
 	Implied     bool
-	Index       []Node
+	Index       []SmiNode
 }
 
-func (t Node) AsTable() Table {
+func (t SmiNode) AsTable() Table {
 	columns, columnOrder := t.GetColumns()
 	return Table{
-		Node:        t,
+		SmiNode:     t,
 		Columns:     columns,
 		ColumnOrder: columnOrder,
 		Implied:     t.GetImplied(),
@@ -28,7 +28,7 @@ func (t Node) AsTable() Table {
 	}
 }
 
-func (t Node) getRow() (row *C.struct_SmiNode) {
+func (t SmiNode) getRow() (row *C.struct_SmiNode) {
 	switch t.Kind {
 	case types.NodeRow:
 		row = t.GetRaw()
@@ -49,7 +49,7 @@ func (t Node) getRow() (row *C.struct_SmiNode) {
 	return
 }
 
-func (t Node) GetRow() (row Node) {
+func (t SmiNode) GetRow() (row SmiNode) {
 	smiRow := t.getRow()
 	if smiRow == nil {
 		return
@@ -57,13 +57,13 @@ func (t Node) GetRow() (row Node) {
 	return CreateNode(smiRow)
 }
 
-func (t Node) GetColumns() (columns map[string]Node, columnOrder []string) {
+func (t SmiNode) GetColumns() (columns map[string]SmiNode, columnOrder []string) {
 	row := t.getRow()
 	if row == nil {
 		return
 	}
 
-	columns = make(map[string]Node)
+	columns = make(map[string]SmiNode)
 	columnOrder = make([]string, 0, 2)
 
 	for smiColumn := C.smiGetFirstChildNode(row); smiColumn != nil; smiColumn = C.smiGetNextChildNode(smiColumn) {
@@ -78,7 +78,7 @@ func (t Node) GetColumns() (columns map[string]Node, columnOrder []string) {
 	return
 }
 
-func (t Node) GetImplied() (implied bool) {
+func (t SmiNode) GetImplied() (implied bool) {
 	row := t.getRow()
 	if row == nil {
 		return false
@@ -87,7 +87,7 @@ func (t Node) GetImplied() (implied bool) {
 	return int(row.implied) > 0
 }
 
-func (t Node) GetIndex() (index []Node) {
+func (t SmiNode) GetIndex() (index []SmiNode) {
 	row := t.getRow()
 	if row == nil {
 		return

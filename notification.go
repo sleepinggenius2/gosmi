@@ -8,18 +8,18 @@ package gosmi
 import "C"
 
 type Notification struct {
-	Node
-	Objects []Node
+	SmiNode
+	Objects []SmiNode
 }
 
-func (n Node) AsNotification() Notification {
+func (n SmiNode) AsNotification() Notification {
 	return Notification{
-		Node: n,
+		SmiNode: n,
 		Objects: n.GetNotificationObjects(),
 	}
 }
 
-func (n Node) GetNotificationObjects() (objects []Node) {
+func (n SmiNode) GetNotificationObjects() (objects []SmiNode) {
 	for element := C.smiGetFirstElement(n.smiNode); element != nil; element = C.smiGetNextElement(element) {
 		object := C.smiGetElementNode(element)
 		if object == nil {

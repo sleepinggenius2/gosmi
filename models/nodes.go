@@ -1,18 +1,15 @@
 package models
 
-import (
-	"github.com/sleepinggenius2/gosmi"
-)
-
 type BaseNode struct {
-	Name   string
-	Oid    []uint
-	OidLen uint
+	Name         string
+	Oid          []uint
+	OidFormatted string
+	OidLen       uint
 }
 
 type ScalarNode struct {
 	BaseNode
-	Type gosmi.Type
+	Type Type
 }
 
 type TableNode struct {

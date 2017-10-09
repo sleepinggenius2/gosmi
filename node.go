@@ -11,28 +11,22 @@ import (
 	"fmt"
 	"unsafe"
 
+	"github.com/sleepinggenius2/gosmi/models"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
-type Node struct {
-	smiNode     *C.struct_SmiNode
-	Access      types.Access
-	Decl        types.Decl
-	Description string
-	Kind        types.NodeKind
-	Name        string
-	Oid         []uint
-	OidLen      int
-	Status      types.Status
-	Type        *Type
+type SmiNode struct {
+	models.Node
+	smiNode *C.struct_SmiNode
+	SmiType *SmiType
 }
 
-func (n Node) GetModule() (module Module) {
+func (n SmiNode) GetModule() (module SmiModule) {
 	smiModule := C.smiGetNodeModule(n.smiNode)
 	return CreateModule(smiModule)
 }
 
-func (n Node) GetSubtree() (nodes []Node) {
+func (n SmiNode) GetSubtree() (nodes []SmiNode) {
 	first := true
 	smiNode := n.smiNode
 	for oidlen := n.OidLen; smiNode != nil && (first || int(smiNode.oidlen) > oidlen); smiNode = C.smiGetNextNode(smiNode, C.SMI_NODEKIND_ANY) {
@@ -43,31 +37,31 @@ func (n Node) GetSubtree() (nodes []Node) {
 	return
 }
 
-func (n Node) Render(flags types.Render) string {
+func (n SmiNode) Render(flags types.Render) string {
 	cRenderString := C.smiRenderNode(n.smiNode, C.int(flags))
 
 	return C.GoString(cRenderString)
 }
 
-func (n Node) RenderNumeric() string {
+func (n SmiNode) RenderNumeric() string {
 	cRenderString := C.smiRenderOID(n.smiNode.oidlen, n.smiNode.oid, C.int(types.RenderNumeric))
 
 	return C.GoString(cRenderString)
 }
 
-func (n Node) RenderQualified() string {
+func (n SmiNode) RenderQualified() string {
 	return n.Render(types.RenderQualified)
 }
 
-func (n Node) GetRaw() (node *C.struct_SmiNode) {
+func (n SmiNode) GetRaw() (node *C.struct_SmiNode) {
 	return n.smiNode
 }
 
-func (n *Node) SetRaw(smiNode *C.struct_SmiNode) {
+func (n *SmiNode) SetRaw(smiNode *C.struct_SmiNode) {
 	n.smiNode = smiNode
 }
 
-func CreateNode(smiNode *C.struct_SmiNode) (node Node) {
+func CreateNode(smiNode *C.struct_SmiNode) (node SmiNode) {
 	node.SetRaw(smiNode)
 	node.Access = types.Access(smiNode.access)
 	node.Decl = types.Decl(smiNode.decl)
@@ -76,7 +70,10 @@ func CreateNode(smiNode *C.struct_SmiNode) (node Node) {
 	node.Name = C.GoString(smiNode.name)
 	node.OidLen = int(smiNode.oidlen)
 	node.Status = types.Status(smiNode.status)
-	node.Type = CreateTypeFromNode(smiNode)
+	node.SmiType = CreateTypeFromNode(smiNode)
+	if node.SmiType != nil {
+		node.Type = &node.SmiType.Type
+	}
 
 	length := node.OidLen
 	subid := (*[1 << 30]C.SmiSubid)(unsafe.Pointer(smiNode.oid))[:length:length]
@@ -88,7 +85,7 @@ func CreateNode(smiNode *C.struct_SmiNode) (node Node) {
 	return
 }
 
-func GetNode(name string, module ...Module) (node Node, err error) {
+func GetNode(name string, module ...SmiModule) (node SmiNode, err error) {
 	var smiModule *C.struct_SmiModule
 	if len(module) > 0 {
 		smiModule = module[0].GetRaw()
