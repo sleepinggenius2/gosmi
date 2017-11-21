@@ -9,26 +9,16 @@ import "C"
 
 import (
 	"fmt"
-	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/sleepinggenius2/gosmi/models"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
-type Import struct {
-	Module string
-	Name   string
-}
-
 type SmiModule struct {
 	models.Module
 	smiModule *C.struct_SmiModule
-}
-
-type Revision struct {
-	Date        syscall.Time_t
-	Description string
 }
 
 func (m SmiModule) GetIdentityNode() (node SmiNode, ok bool) {
@@ -39,9 +29,9 @@ func (m SmiModule) GetIdentityNode() (node SmiNode, ok bool) {
 	return CreateNode(smiIdentityNode), true
 }
 
-func (m SmiModule) GetImports() (imports []Import) {
+func (m SmiModule) GetImports() (imports []models.Import) {
 	for smiImport := C.smiGetFirstImport(m.smiModule); smiImport != nil; smiImport = C.smiGetNextImport(smiImport) {
-		_import := Import{
+		_import := models.Import{
 			Module: C.GoString(smiImport.module),
 			Name:   C.GoString(smiImport.name),
 		}
@@ -66,10 +56,10 @@ func (m SmiModule) GetNodes(kind ...types.NodeKind) (nodes []SmiNode) {
 	return
 }
 
-func (m SmiModule) GetRevisions() (revisions []Revision) {
+func (m SmiModule) GetRevisions() (revisions []models.Revision) {
 	for smiRevision := C.smiGetFirstRevision(m.smiModule); smiRevision != nil; smiRevision = C.smiGetNextRevision(smiRevision) {
-		revision := Revision{
-			Date:        syscall.Time_t(smiRevision.date),
+		revision := models.Revision{
+			Date:        time.Unix(int64(smiRevision.date), 0),
 			Description: C.GoString(smiRevision.description),
 		}
 		revisions = append(revisions, revision)
