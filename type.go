@@ -29,17 +29,13 @@ func (t *SmiType) getEnum() {
 		return
 	}
 
-	enum := models.Enum{
+	t.Enum = &models.Enum{
 		BaseType: types.BaseType(smiNamedNumber.value.basetype),
+		Values:   make(models.EnumValues),
 	}
 	for ; smiNamedNumber != nil; smiNamedNumber = C.smiGetNextNamedNumber(smiNamedNumber) {
-		namedNumber := models.NamedNumber{
-			Name:  C.GoString(smiNamedNumber.name),
-			Value: convertValue(smiNamedNumber.value),
-		}
-		enum.Values = append(enum.Values, namedNumber)
+		t.Enum.Values[convertValue(smiNamedNumber.value)] = C.GoString(smiNamedNumber.name)
 	}
-	t.Enum = &enum
 	return
 }
 

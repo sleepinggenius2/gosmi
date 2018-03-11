@@ -98,11 +98,7 @@ func GetDurationFormatter(flags Format) (f ValueFormatter) {
 	}
 }
 
-func GetEnumFormatter(flags Format, values []NamedNumber) (f ValueFormatter) {
-	enums := make(map[int64]string, len(values))
-	for _, enum := range values {
-		enums[enum.Value] = enum.Name
-	}
+func GetEnumFormatter(flags Format, values EnumValues) (f ValueFormatter) {
 	return func(value interface{}) (v Value) {
 		v.Format = flags
 		v.Raw = value
@@ -118,7 +114,7 @@ func GetEnumFormatter(flags Format, values []NamedNumber) (f ValueFormatter) {
 		}
 		v.Raw = intVal
 		if flags&FormatEnumName != 0 {
-			enumName, ok := enums[intVal]
+			enumName, ok := values[intVal]
 			if !ok {
 				enumName = "unknown"
 			}
@@ -133,11 +129,7 @@ func GetEnumFormatter(flags Format, values []NamedNumber) (f ValueFormatter) {
 	}
 }
 
-func GetEnumBitsFormatter(flags Format, values []NamedNumber) (f ValueFormatter) {
-	enums := make(map[uint64]string, len(values))
-	for _, enum := range values {
-		enums[uint64(enum.Value)] = enum.Name
-	}
+func GetEnumBitsFormatter(flags Format, values EnumValues) (f ValueFormatter) {
 	return func(value interface{}) (v Value) {
 		v.Format = flags
 		v.Raw = value
@@ -155,10 +147,10 @@ func GetEnumBitsFormatter(flags Format, values []NamedNumber) (f ValueFormatter)
 		for i, octet := range octets {
 			for j := 7; j >= 0; j-- {
 				if octet&(1<<uint(j)) != 0 {
-					bit := uint64(8*i + (7 - j))
+					bit := int64(8*i + (7 - j))
 					var bitFormatted string
 					if flags&FormatEnumName != 0 {
-						enumName, ok := enums[bit]
+						enumName, ok := values[bit]
 						if !ok {
 							enumName = "unknown"
 						}
