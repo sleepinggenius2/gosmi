@@ -25,6 +25,16 @@ const (
 	FormatAll Format = 0xff & ^FormatUnits
 )
 
+func ResolveFormat(formats []Format) (format Format) {
+	if len(formats) == 0 {
+		return FormatAll
+	}
+	for _, f := range formats {
+		format |= f
+	}
+	return
+}
+
 type Value struct {
 	Format    Format
 	Formatted string
