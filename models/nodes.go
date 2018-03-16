@@ -31,9 +31,7 @@ type RowNode struct {
 	Index   []ColumnNode
 }
 
-type ColumnNode struct {
-	ScalarNode
-}
+type ColumnNode ScalarNode
 
 type NotificationNode struct {
 	BaseNode
