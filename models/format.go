@@ -38,6 +38,13 @@ func (v Value) String() string {
 	return v.Formatted
 }
 
+func (v Value) Int64() int64 {
+	if i, ok := v.Raw.(int64); ok {
+		return i
+	}
+	return 0
+}
+
 type ValueFormatter func(interface{}) Value
 
 func (n Node) GetValueFormatter(flags ...Format) (f ValueFormatter) {
