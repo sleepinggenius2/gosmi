@@ -9,6 +9,36 @@ import (
 type Enum struct {
 	BaseType types.BaseType
 	Values   []NamedNumber
+	valueMap map[int64]string
+}
+
+func (e *Enum) initValueMap() {
+	if e.valueMap != nil {
+		return
+	}
+	e.valueMap = make(map[int64]string, len(e.Values))
+	for _, value := range e.Values {
+		e.valueMap[value.Value] = value.Name
+	}
+}
+
+func (e *Enum) Name(value int64) string {
+	e.initValueMap()
+	name, ok := e.valueMap[value]
+	if !ok {
+		return "unknown"
+	}
+	return name
+}
+
+func (e *Enum) Value(name string) int64 {
+	e.initValueMap()
+	for k, v := range e.valueMap {
+		if v == name {
+			return k
+		}
+	}
+	return 0
 }
 
 type NamedNumber struct {
