@@ -76,6 +76,22 @@ func (n Node) GetValueFormatter(flags ...Format) ValueFormatter {
 	return n.Type.GetValueFormatter(flags...)
 }
 
+func (n ScalarNode) FormatValue(value interface{}, flags ...Format) Value {
+	return n.Type.FormatValue(value, flags...)
+}
+
+func (n ScalarNode) GetValueFormatter(flags ...Format) ValueFormatter {
+	return n.Type.GetValueFormatter(flags...)
+}
+
+func (n ColumnNode) FormatValue(value interface{}, flags ...Format) Value {
+	return n.Type.FormatValue(value, flags...)
+}
+
+func (n ColumnNode) GetValueFormatter(flags ...Format) ValueFormatter {
+	return n.Type.GetValueFormatter(flags...)
+}
+
 func (t Type) FormatValue(value interface{}, flags ...Format) Value {
 	formatFlags := ResolveFormat(flags)
 	switch t.BaseType {
