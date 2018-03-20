@@ -87,6 +87,29 @@ func (t SmiNode) GetImplied() (implied bool) {
 	return int(row.implied) > 0
 }
 
+func (t SmiNode) GetAugment() (row SmiNode) {
+	smiRow := t.getRow()
+	if smiRow == nil {
+		return
+	}
+
+	if types.IndexKind(smiRow.indexkind) != types.IndexAugment {
+		return
+	}
+
+	smiRow = C.smiGetRelatedNode(smiRow)
+	if smiRow == nil {
+		return
+	}
+
+	if types.NodeKind(smiRow.nodekind) != types.NodeRow {
+		// TODO: error
+		return
+	}
+
+	return CreateNode(smiRow)
+}
+
 func (t SmiNode) GetIndex() (index []SmiNode) {
 	row := t.getRow()
 	if row == nil {
