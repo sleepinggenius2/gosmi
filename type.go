@@ -9,6 +9,8 @@ import "C"
 
 import (
 	"encoding/binary"
+	"fmt"
+	"unsafe"
 
 	"github.com/sleepinggenius2/gosmi/models"
 	"github.com/sleepinggenius2/gosmi/types"
@@ -121,6 +123,27 @@ func CreateTypeFromNode(smiNode *C.struct_SmiNode) (outType *SmiType) {
 	}
 
 	return
+}
+
+func GetType(name string, module ...SmiModule) (outType SmiType, err error) {
+	var smiModule *C.struct_SmiModule
+	if len(module) > 0 {
+		smiModule = module[0].GetRaw()
+	}
+
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	smiType := C.smiGetType(smiModule, cName)
+	if smiType == nil {
+		if len(module) > 0 {
+			err = fmt.Errorf("Could not find type named %s in module %s", name, module[0].Name)
+		} else {
+			err = fmt.Errorf("Could not find type named %s", name)
+		}
+		return
+	}
+	return CreateType(smiType), nil
 }
 
 func convertValue(value C.struct_SmiValue) (outValue int64) {

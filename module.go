@@ -67,6 +67,10 @@ func (m SmiModule) GetRevisions() (revisions []models.Revision) {
 	return
 }
 
+func (m SmiModule) GetType(name string) (outType SmiType, err error) {
+	return GetType(name, m)
+}
+
 func (m SmiModule) GetTypes() (types []SmiType) {
 	for smiType := C.smiGetFirstType(m.smiModule); smiType != nil; smiType = C.smiGetNextType(smiType) {
 		types = append(types, CreateType(smiType))
