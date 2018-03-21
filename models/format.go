@@ -4,6 +4,7 @@ package models
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/sleepinggenius2/gosmi/types"
@@ -62,11 +63,46 @@ func (v Value) Int64() int64 {
 	return 0
 }
 
+func (v Value) Uint64() uint64 {
+	if i, ok := v.Raw.(int64); ok {
+		return uint64(i)
+	}
+	return 0
+}
+
 func (v Value) String() string {
 	if v.Format == FormatNone {
 		return fmt.Sprintf("%v", v.Raw)
 	}
 	return v.Formatted
+}
+
+func ToInt64(value interface{}) (val int64) {
+	switch value := value.(type) {
+	case int64:
+		val = value
+	case uint64:
+		val = int64(value)
+	case int:
+		val = int64(value)
+	case int8:
+		val = int64(value)
+	case int16:
+		val = int64(value)
+	case int32:
+		val = int64(value)
+	case uint:
+		val = int64(value)
+	case uint8:
+		val = int64(value)
+	case uint16:
+		val = int64(value)
+	case uint32:
+		val = int64(value)
+	case string:
+		val, _ = strconv.ParseInt(value, 10, 64)
+	}
+	return
 }
 
 type ValueFormatter func(interface{}) Value

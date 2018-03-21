@@ -3,21 +3,17 @@ package models
 import (
 	"fmt"
 	"strconv"
-
-	"github.com/sleepinggenius2/gosnmp"
 )
 
 func GetIntFormatted(value interface{}, flags Format, format string) Value {
-	var intVal int64
-	switch tempVal := value.(type) {
-	case int64:
-		intVal = tempVal
-	default:
-		intVal = gosnmp.ToBigInt(tempVal).Int64()
+	intVal := ToInt64(value)
+	var formatted string
+	if flags != FormatNone {
+		formatted = IntegerDisplayHint(format, intVal)
 	}
 	return Value{
 		Format:    flags,
-		Formatted: IntegerDisplayHint(format, intVal),
+		Formatted: formatted,
 		Raw:       intVal,
 	}
 }
