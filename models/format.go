@@ -22,9 +22,12 @@ const (
 	FormatAll Format = 0xff & ^FormatUnits
 )
 
-func ResolveFormat(formats []Format) (format Format) {
+func ResolveFormat(formats []Format, defaultFormat ...Format) (format Format) {
 	if len(formats) == 0 {
-		return FormatAll
+		if len(defaultFormat) == 0 {
+			return FormatAll
+		}
+		return defaultFormat[0]
 	}
 	for _, f := range formats {
 		format |= f
