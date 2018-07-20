@@ -44,6 +44,21 @@ func (m SmiModule) GetNode(name string) (node SmiNode, err error) {
 	return GetNode(name, m)
 }
 
+func (m SmiModule) GetNodeByOid(oid []uint) (node SmiNode, err error) {
+	length := len(oid)
+	var subid = make([]C.uint, length)
+	for i, o := range oid {
+		subid[i] = C.uint(o)
+	}
+	ssp := (*C.SmiSubid)(unsafe.Pointer(&subid[0]))
+	smiNode := C.smiGetNodeByOID((C.uint)(length), ssp)
+	if smiNode == nil {
+		fmt.Errorf("Could not find Oid %v in module %s", oid, m.Module.Name)
+		return
+	}
+	return CreateNode(smiNode), nil
+}
+
 func (m SmiModule) GetNodes(kind ...types.NodeKind) (nodes []SmiNode) {
 	nodeKind := types.NodeAny
 	if len(kind) > 0 && kind[0] != types.NodeUnknown {
