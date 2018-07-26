@@ -47,7 +47,7 @@ func (m SmiModule) GetNode(name string) (node SmiNode, err error) {
 func (m SmiModule) GetNodeByOid(oid []uint) (node SmiNode, err error) {
 	length := len(oid)
 	var subid = make([]C.uint, length)
-	defer C.free(unsafe.Pointer(subid))
+	defer C.free(unsafe.Pointer(&subid[0]))
 	for i, o := range oid {
 		subid[i] = C.uint(o)
 	}
