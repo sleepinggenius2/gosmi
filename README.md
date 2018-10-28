@@ -110,9 +110,9 @@ func ModuleTrees() {
 		types := m.GetTypes()
 
 		jsonBytes, _ := json.Marshal(struct {
-			Module gosmi.Module
-			Nodes  []gosmi.Node
-			Types  []gosmi.Type
+			Module gosmi.SmiModule
+			Nodes  []gosmi.SmiNode
+			Types  []gosmi.SmiType
 		}{
 			Module: m,
 			Nodes:  nodes,
