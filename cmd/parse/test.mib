@@ -1,0 +1,146 @@
+FIZBIN-MIB DEFINITIONS ::= BEGIN
+	IMPORTS
+	    MODULE-IDENTITY, OBJECT-TYPE, experimental
+			FROM SNMPv2-SMI;
+
+	fizbin MODULE-IDENTITY
+	    LAST-UPDATED "199505241811Z"
+	    ORGANIZATION "IETF SNMPv2 Working Group"
+	    CONTACT-INFO
+	            "        Marshall T. Rose
+
+	             Postal: Dover Beach Consulting, Inc.
+	                     420 Whisman Court
+	                     Mountain View, CA  94043-2186
+	                     US
+
+	                Tel: +1 415 968 1052
+	                Fax: +1 415 968 2510
+
+	             E-mail: mrose@dbc.mtview.ca.us"
+
+	    DESCRIPTION
+	            "The MIB module for entities implementing the xxxx
+	            protocol."
+	    REVISION      "9505241811Z"
+	    DESCRIPTION
+	            "The latest version of this MIB module."
+	    REVISION      "9210070433Z"
+	    DESCRIPTION
+	            "The initial version of this MIB module, published in
+	            RFC yyyy."
+	-- contact IANA for actual number
+		::= { experimental 101 }
+
+    entityMIBTraps      OBJECT IDENTIFIER ::= { entityMIB 2 }
+    entityMIBTrapPrefix OBJECT IDENTIFIER ::= { entityMIBTraps 0 }
+
+    entConfigChange NOTIFICATION-TYPE
+        STATUS             current
+        DESCRIPTION
+                "An entConfigChange trap is sent when the value of
+                entLastChangeTime changes. It can be utilized by an NMS to
+                trigger logical/physical entity table maintenance polls.
+                An agent must not generate more than one entConfigChange
+                'trap-event' in a five second period, where a 'trap-event'
+                is the transmission of a single trap PDU to a list of
+                trap destinations.  If additional configuration changes
+                occur within the five second 'throttling' period, then
+                these trap-events should be suppressed by the agent. An
+                NMS should periodically check the value of
+                entLastChangeTime to detect any missed entConfigChange
+                trap-events, e.g. due to throttling or transmission loss."
+			::= { entityMIBTrapPrefix 1 }
+
+    evalSlot OBJECT-TYPE
+        SYNTAX      Integer32 (0..2147483647)
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+                "The index number of the first unassigned entry in the
+                evaluation table, or the value of zero indicating that
+                all entries are assigned.
+
+                A management station should create new entries in the
+                evaluation table using this algorithm:  first, issue a
+                management protocol retrieval operation to determine the
+                value of evalSlot; and, second, issue a management
+                protocol set operation to create an instance of the
+                evalStatus object setting its value to createAndGo(4) or
+                createAndWait(5).  If this latter operation succeeds,
+                then the management station may continue modifying the
+                instances corresponding to the newly created conceptual
+                row, without fear of collision with other management
+                stations."
+            ::= { eval 1 }
+
+    evalTable OBJECT-TYPE
+        SYNTAX      SEQUENCE OF EvalEntry
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+                "The (conceptual) evaluation table."
+            ::= { eval 2 }
+
+    evalEntry OBJECT-TYPE
+        SYNTAX      EvalEntry
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+                "An entry (conceptual row) in the evaluation table."
+        INDEX   { evalIndex }
+            ::= { evalTable 1 }
+
+    EvalEntry ::=
+        SEQUENCE {
+            evalIndex       Integer32,
+            evalString      DisplayString,
+            evalValue       Integer32,
+            evalStatus      RowStatus
+        }
+
+    evalIndex OBJECT-TYPE
+        SYNTAX      Integer32 (1..2147483647)
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+                "The auxiliary variable used for identifying instances of
+                the columnar objects in the evaluation table."
+            ::= { evalEntry 1 }
+
+    evalString OBJECT-TYPE
+        SYNTAX      DisplayString
+        MAX-ACCESS  read-create
+        STATUS      current
+        DESCRIPTION
+                "The string to evaluate."
+            ::= { evalEntry 2 }
+
+    evalValue OBJECT-TYPE
+        SYNTAX      Integer32
+        MAX-ACCESS  read-only
+        STATUS      current
+        DESCRIPTION
+                "The value when evalString was last evaluated, or zero if
+                 no such value is available."
+        DEFVAL  { 0 }
+            ::= { evalEntry 3 }
+
+    evalStatus OBJECT-TYPE
+        SYNTAX      RowStatus
+        MAX-ACCESS  read-create
+        STATUS      current
+        DESCRIPTION
+                "The status column used for creating, modifying, and
+                deleting instances of the columnar objects in the
+                evaluation table."
+        DEFVAL  { active }
+            ::= { evalEntry 4 }
+
+    PhysAddress ::= TEXTUAL-CONVENTION
+        DISPLAY-HINT "1x:"
+        STATUS       current
+        DESCRIPTION
+                "Represents media- or physical-level addresses."
+        SYNTAX       OCTET STRING
+END
