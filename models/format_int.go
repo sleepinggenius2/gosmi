@@ -3,12 +3,13 @@ package models
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func GetIntFormatted(value interface{}, flags Format, format string) Value {
-	intVal := ToInt64(value)
 	var formatted string
-	if flags != FormatNone {
+	intVal, err := ToInt64(value)
+	if err == nil && flags != FormatNone {
 		formatted = IntegerDisplayHint(format, intVal)
 	}
 	return Value{
@@ -26,13 +27,13 @@ func GetIntFormatter(flags Format, format string) (f ValueFormatter) {
 
 func IntegerDisplayHint(format string, value int64) (formatted string) {
 	if len(format) == 0 {
-		return fmt.Sprintf("%d", value)
+		return strconv.FormatInt(value, 10)
 	}
 	switch format[0] {
 	case 'b':
 		formatted = fmt.Sprintf("%b", value)
 	case 'd':
-		formatted = fmt.Sprintf("%d", value)
+		formatted = strconv.FormatInt(value, 10)
 		if len(format) < 3 {
 			break
 		}
@@ -46,17 +47,17 @@ func IntegerDisplayHint(format string, value int64) (formatted string) {
 			offset = 1
 		}
 		if formattedLen-offset <= decimals {
-			formatStr := "0.%0" + format[2:] + "s"
-			formatted = formatted[:offset] + fmt.Sprintf(formatStr, formatted[offset:])
-			break
+			zeros := decimals - formattedLen + offset
+			formatted = formatted[:offset] + "0." + strings.Repeat("0", zeros) + formatted[offset:]
+		} else {
+			formatted = formatted[:formattedLen-decimals] + "." + formatted[formattedLen-decimals:]
 		}
-		formatted = formatted[:formattedLen-decimals] + "." + formatted[formattedLen-decimals:]
 	case 'o':
-		formatted = fmt.Sprintf("%o", value)
+		formatted = strconv.FormatInt(value, 8)
 	case 'x':
-		formatted = fmt.Sprintf("%x", value)
+		formatted = strconv.FormatInt(value, 16)
 	default:
-		formatted = fmt.Sprintf("%d", value)
+		formatted = strconv.FormatInt(value, 10)
 	}
 	return
 }

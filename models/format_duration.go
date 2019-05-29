@@ -7,7 +7,11 @@ import (
 )
 
 func GetDurationFormatted(value interface{}, flags Format) (v Value) {
-	duration := time.Duration(ToInt64(value) * 1e7)
+	intVal, err := ToInt64(value)
+	if err != nil {
+		return
+	}
+	duration := time.Duration(intVal * 1e7)
 	v.Format = flags
 	v.Raw = duration
 	if flags == FormatNone {

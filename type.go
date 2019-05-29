@@ -56,13 +56,16 @@ func (t *SmiType) getRanges() {
 	}
 
 	ranges := make([]models.Range, 0)
-	for smiRange := C.smiGetFirstRange(t.smiType); smiRange != nil; smiRange = C.smiGetNextRange(smiRange) {
+	// Workaround for libsmi bug that causes ranges to loop infinitely sometimes
+	var currSmiRange *C.struct_SmiRange
+	for smiRange := C.smiGetFirstRange(t.smiType); smiRange != nil && smiRange != currSmiRange; smiRange = C.smiGetNextRange(smiRange) {
 		r := models.Range{
 			BaseType: types.BaseType(smiRange.minValue.basetype),
 			MinValue: convertValue(smiRange.minValue),
 			MaxValue: convertValue(smiRange.maxValue),
 		}
 		ranges = append(ranges, r)
+		currSmiRange = smiRange
 	}
 	t.Ranges = ranges
 }

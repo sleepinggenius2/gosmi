@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
@@ -46,6 +47,9 @@ func (v Value) Bytes() []byte {
 	if b, ok := v.Raw.([]byte); ok {
 		return b
 	}
+	if s, ok := v.Raw.(string); ok {
+		return []byte(s)
+	}
 	return []byte{}
 }
 
@@ -71,13 +75,22 @@ func (v Value) Uint64() uint64 {
 }
 
 func (v Value) String() string {
-	if v.Format == FormatNone {
-		return fmt.Sprintf("%v", v.Raw)
+	if v.Format != FormatNone {
+		return v.Formatted
 	}
-	return v.Formatted
+	if v.Raw == nil {
+		return ""
+	}
+	switch r := v.Raw.(type) {
+	case string:
+		return r
+	case []byte:
+		return string(r)
+	}
+	return fmt.Sprintf("%v", v.Raw)
 }
 
-func ToInt64(value interface{}) (val int64) {
+func ToInt64(value interface{}) (val int64, err error) {
 	switch value := value.(type) {
 	case int64:
 		val = value
@@ -100,7 +113,9 @@ func ToInt64(value interface{}) (val int64) {
 	case uint32:
 		val = int64(value)
 	case string:
-		val, _ = strconv.ParseInt(value, 10, 64)
+		return strconv.ParseInt(value, 10, 64)
+	default:
+		err = errors.Errorf("Value has invalid type: %T", value)
 	}
 	return
 }

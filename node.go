@@ -78,9 +78,9 @@ func CreateNode(smiNode *C.struct_SmiNode) (node SmiNode) {
 	length := node.OidLen
 	subid := (*[1 << 30]C.SmiSubid)(unsafe.Pointer(smiNode.oid))[:length:length]
 
-	node.Oid = make([]uint, length)
+	node.Oid = make([]uint32, length)
 	for i := 0; i < length; i++ {
-		node.Oid[i] = uint(subid[i])
+		node.Oid[i] = uint32(subid[i])
 	}
 	return
 }

@@ -5,9 +5,12 @@ import (
 )
 
 func GetEnumFormatted(value interface{}, flags Format, enum *Enum) (v Value) {
-	intVal := ToInt64(value)
+	intVal, err := ToInt64(value)
 	v.Format = flags
 	v.Raw = intVal
+	if err != nil {
+		return
+	}
 	if flags&FormatEnumName != 0 {
 		v.Formatted = enum.Name(intVal)
 		if flags&FormatEnumValue != 0 {
