@@ -88,3 +88,12 @@ func GetNode(name string, module ...SmiModule) (node SmiNode, err error) {
 	}
 	return CreateNode(smiNode), nil
 }
+
+func GetNodeByOID(oid types.Oid) (node SmiNode, err error) {
+	smiNode := smi.GetNodeByOID(oid)
+	if smiNode == nil {
+		err = fmt.Errorf("Could not find node for OID %s", oid)
+		return
+	}
+	return CreateNode(smiNode), nil
+}
