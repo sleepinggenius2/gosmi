@@ -1,28 +1,20 @@
 package gosmi
 
-/*
-#cgo LDFLAGS: -lsmi
-#include <stdlib.h>
-#include <smi.h>
-*/
-import "C"
-
 import (
 	"fmt"
-	"time"
-	"unsafe"
 
 	"github.com/sleepinggenius2/gosmi/models"
+	"github.com/sleepinggenius2/gosmi/smi"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
 type SmiModule struct {
 	models.Module
-	smiModule *C.struct_SmiModule
+	smiModule *types.SmiModule
 }
 
 func (m SmiModule) GetIdentityNode() (node SmiNode, ok bool) {
-	smiIdentityNode := C.smiGetModuleIdentityNode(m.smiModule)
+	smiIdentityNode := smi.GetModuleIdentityNode(m.smiModule)
 	if smiIdentityNode == nil {
 		return
 	}
@@ -30,10 +22,10 @@ func (m SmiModule) GetIdentityNode() (node SmiNode, ok bool) {
 }
 
 func (m SmiModule) GetImports() (imports []models.Import) {
-	for smiImport := C.smiGetFirstImport(m.smiModule); smiImport != nil; smiImport = C.smiGetNextImport(smiImport) {
+	for smiImport := smi.GetFirstImport(m.smiModule); smiImport != nil; smiImport = smi.GetNextImport(smiImport) {
 		_import := models.Import{
-			Module: C.GoString(smiImport.module),
-			Name:   C.GoString(smiImport.name),
+			Module: string(smiImport.Module),
+			Name:   string(smiImport.Name),
 		}
 		imports = append(imports, _import)
 	}
@@ -49,18 +41,17 @@ func (m SmiModule) GetNodes(kind ...types.NodeKind) (nodes []SmiNode) {
 	if len(kind) > 0 && kind[0] != types.NodeUnknown {
 		nodeKind = kind[0]
 	}
-	cNodeKind := C.SmiNodekind(nodeKind)
-	for smiNode := C.smiGetFirstNode(m.smiModule, cNodeKind); smiNode != nil; smiNode = C.smiGetNextNode(smiNode, cNodeKind) {
+	for smiNode := smi.GetFirstNode(m.smiModule, nodeKind); smiNode != nil; smiNode = smi.GetNextNode(smiNode, nodeKind) {
 		nodes = append(nodes, CreateNode(smiNode))
 	}
 	return
 }
 
 func (m SmiModule) GetRevisions() (revisions []models.Revision) {
-	for smiRevision := C.smiGetFirstRevision(m.smiModule); smiRevision != nil; smiRevision = C.smiGetNextRevision(smiRevision) {
+	for smiRevision := smi.GetFirstRevision(m.smiModule); smiRevision != nil; smiRevision = smi.GetNextRevision(smiRevision) {
 		revision := models.Revision{
-			Date:        time.Unix(int64(smiRevision.date), 0),
-			Description: C.GoString(smiRevision.description),
+			Date:        smiRevision.Date,
+			Description: smiRevision.Description,
 		}
 		revisions = append(revisions, revision)
 	}
@@ -72,70 +63,59 @@ func (m SmiModule) GetType(name string) (outType SmiType, err error) {
 }
 
 func (m SmiModule) GetTypes() (types []SmiType) {
-	for smiType := C.smiGetFirstType(m.smiModule); smiType != nil; smiType = C.smiGetNextType(smiType) {
+	for smiType := smi.GetFirstType(m.smiModule); smiType != nil; smiType = smi.GetNextType(smiType) {
 		types = append(types, CreateType(smiType))
 	}
 	return
 }
 
-func (m SmiModule) GetRaw() (module *C.struct_SmiModule) {
+func (m SmiModule) GetRaw() (module *types.SmiModule) {
 	return m.smiModule
 }
 
-func (m *SmiModule) SetRaw(smiModule *C.struct_SmiModule) {
+func (m *SmiModule) SetRaw(smiModule *types.SmiModule) {
 	m.smiModule = smiModule
 }
 
-func CreateModule(smiModule *C.struct_SmiModule) (module SmiModule) {
-	module.SetRaw(smiModule)
-	module.ContactInfo = C.GoString(smiModule.contactinfo)
-	module.Description = C.GoString(smiModule.description)
-	module.Language = types.Language(smiModule.language)
-	module.Name = C.GoString(smiModule.name)
-	module.Organization = C.GoString(smiModule.organization)
-	module.Path = C.GoString(smiModule.path)
-	module.Reference = C.GoString(smiModule.reference)
-	return
+func CreateModule(smiModule *types.SmiModule) (module SmiModule) {
+	return SmiModule{
+		Module: models.Module{
+			ContactInfo:  smiModule.ContactInfo,
+			Description:  smiModule.Description,
+			Language:     smiModule.Language,
+			Name:         string(smiModule.Name),
+			Organization: smiModule.Organization,
+			Path:         smiModule.Path,
+			Reference:    smiModule.Reference,
+		},
+		smiModule: smiModule,
+	}
 }
 
-func LoadModule(modulePath string) (moduleName string, err error) {
-	cModulePath := C.CString(modulePath)
-	defer C.free(unsafe.Pointer(cModulePath))
-
-	cModuleName := C.smiLoadModule(cModulePath)
-	if cModuleName == nil {
-		err = fmt.Errorf("Could not load module at %s", modulePath)
-		return
+func LoadModule(modulePath string) (string, error) {
+	moduleName := smi.LoadModule(modulePath)
+	if moduleName == "" {
+		return "", fmt.Errorf("Could not load module at %s", modulePath)
 	}
-
-	return C.GoString(cModuleName), nil
+	return moduleName, nil
 }
 
 func GetLoadedModules() (modules []SmiModule) {
-	for smiModule := C.smiGetFirstModule(); smiModule != nil; smiModule = C.smiGetNextModule(smiModule) {
+	for smiModule := smi.GetFirstModule(); smiModule != nil; smiModule = smi.GetNextModule(smiModule) {
 		modules = append(modules, CreateModule(smiModule))
 	}
 	return
 }
 
 func IsLoaded(moduleName string) bool {
-	cModuleName := C.CString(moduleName)
-	defer C.free(unsafe.Pointer(cModuleName))
-
-	cStatus := C.smiIsLoaded(cModuleName)
-
-	return C.int(cStatus) > 0
+	return smi.IsLoaded(moduleName)
 }
 
 func GetModule(name string) (module SmiModule, err error) {
-	cName := C.CString(name)
-	defer C.free(unsafe.Pointer(cName))
-
-	smiModule := C.smiGetModule(cName)
+	smiModule := smi.GetModule(name)
 	if smiModule == nil {
 		err = fmt.Errorf("Could not find module named %s", name)
 		return
 	}
-
 	return CreateModule(smiModule), nil
 }

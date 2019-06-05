@@ -1,11 +1,8 @@
 package gosmi
 
-/*
-#cgo LDFLAGS: -lsmi
-#include <stdlib.h>
-#include <smi.h>
-*/
-import "C"
+import (
+	"github.com/sleepinggenius2/gosmi/smi"
+)
 
 type Notification struct {
 	SmiNode
@@ -20,8 +17,8 @@ func (n SmiNode) AsNotification() Notification {
 }
 
 func (n SmiNode) GetNotificationObjects() (objects []SmiNode) {
-	for element := C.smiGetFirstElement(n.smiNode); element != nil; element = C.smiGetNextElement(element) {
-		object := C.smiGetElementNode(element)
+	for element := smi.GetFirstElement(n.smiNode); element != nil; element = smi.GetNextElement(element) {
+		object := smi.GetElementNode(element)
 		if object == nil {
 			// TODO: error
 			return

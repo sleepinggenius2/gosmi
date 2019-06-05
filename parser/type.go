@@ -2,23 +2,25 @@ package parser
 
 import (
 	"github.com/alecthomas/participle/lexer"
+
+	"github.com/sleepinggenius2/gosmi/types"
 )
 
 type TextualConvention struct {
 	Pos lexer.Position
 
-	DisplayHint *string `parser:"( \"DISPLAY-HINT\" @Text )?"`
-	Status      Status  `parser:"\"STATUS\" @( \"current\" | \"deprecated\" | \"obsolete\" )"` // Required
-	Description string  `parser:"\"DESCRIPTION\" @Text"`                                       // Required
-	Reference   *string `parser:"( \"REFERENCE\" @Text )?"`
-	Syntax      Syntax  `parser:"\"SYNTAX\" @@"` // Required
+	DisplayHint string     `parser:"( \"DISPLAY-HINT\" @Text )?"`
+	Status      Status     `parser:"\"STATUS\" @( \"current\" | \"deprecated\" | \"obsolete\" )"` // Required
+	Description string     `parser:"\"DESCRIPTION\" @Text"`                                       // Required
+	Reference   string     `parser:"( \"REFERENCE\" @Text )?"`
+	Syntax      SyntaxType `parser:"\"SYNTAX\" @@"` // Required
 }
 
 type SequenceEntry struct {
 	Pos lexer.Position
 
-	Descriptor Identifier `parser:"@Ident"`
-	Syntax     SyntaxType `parser:"@@"`
+	Descriptor types.SmiIdentifier `parser:"@Ident"`
+	Syntax     SyntaxType          `parser:"@@"`
 }
 
 type SequenceType string
@@ -46,9 +48,9 @@ type Implicit struct {
 type Type struct {
 	Pos lexer.Position
 
-	Name              Identifier         `parser:"@Ident Assign"`
-	TextualConvention *TextualConvention `parser:"( ( \"TEXTUAL-CONVENTION\" @@ )"`
-	Sequence          *Sequence          `parser:"| @@"`
-	Implicit          *Implicit          `parser:"| @@"`
-	Syntax            *SyntaxType        `parser:"| @@ )"`
+	Name              types.SmiIdentifier `parser:"@Ident Assign"`
+	TextualConvention *TextualConvention  `parser:"( ( \"TEXTUAL-CONVENTION\" @@ )"`
+	Sequence          *Sequence           `parser:"| @@"`
+	Implicit          *Implicit           `parser:"| @@"`
+	Syntax            *SyntaxType         `parser:"| @@ )"`
 }

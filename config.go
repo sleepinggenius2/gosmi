@@ -1,68 +1,22 @@
 package gosmi
 
-/*
-#cgo LDFLAGS: -lsmi
-#include <stdlib.h>
-#include <smi.h>
-*/
-import "C"
-
 import (
 	"os"
-	"strings"
-	"unsafe"
+
+	"github.com/sleepinggenius2/gosmi/smi"
 )
 
 func Init() {
-	ident := C.CString("gosmi")
-	defer C.free(unsafe.Pointer(ident))
-
-	initStatus := C.smiInit(ident)
-	if int(initStatus) != 0 {
+	if !smi.Init("gosmi") {
 		panic("Failed to initialize")
 	}
 }
 
-func Exit() {
-	C.smiExit()
-}
+func Exit() { smi.Exit() }
 
-func GetPath() string {
-	cPath := C.smiGetPath()
-	return C.GoString(cPath)
-}
+func GetPath() string         { return smi.GetPath() }
+func SetPath(path string)     { smi.SetPath(path) }
+func AppendPath(path string)  { smi.SetPath(string(os.PathListSeparator) + path) }
+func PrependPath(path string) { smi.SetPath(path + string(os.PathListSeparator)) }
 
-func SetPath(path string) {
-	newPath := C.CString(strings.Trim(path, string(os.PathListSeparator)))
-	defer C.free(unsafe.Pointer(newPath))
-	C.smiSetPath(newPath)
-}
-
-func AppendPath(path string) {
-	oldPath := GetPath()
-	newPath := oldPath + string(os.PathListSeparator) + path
-	SetPath(newPath)
-}
-
-func PrependPath(path string) {
-	oldPath := GetPath()
-	newPath := path + string(os.PathListSeparator) + oldPath
-	SetPath(newPath)
-}
-
-func ReadConfig(filename string, tag ...string) bool {
-	configTag := "gosmi"
-	if len(tag) > 0 {
-		configTag = tag[0]
-	}
-
-	cFilename := C.CString(filename)
-	defer C.free(unsafe.Pointer(cFilename))
-
-	cTag := C.CString(configTag)
-	defer C.free(unsafe.Pointer(cTag))
-
-	cStatus := C.smiReadConfig(cFilename, cTag)
-
-	return C.int(cStatus) == 0
-}
+func ReadConfig(filename string, tag ...string) error { return smi.ReadConfig(filename, tag...) }

@@ -10,7 +10,7 @@ type Node struct {
 	Description string
 	Kind        types.NodeKind
 	Name        string
-	Oid         Oid
+	Oid         types.Oid
 	OidLen      int
 	Status      types.Status
 	Type        *Type

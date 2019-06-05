@@ -1,13 +1,9 @@
 package gosmi
 
-/*
-#cgo LDFLAGS: -lsmi
-#include <stdlib.h>
-#include <smi.h>
-*/
-import "C"
-
-import "github.com/sleepinggenius2/gosmi/types"
+import (
+	"github.com/sleepinggenius2/gosmi/smi"
+	"github.com/sleepinggenius2/gosmi/types"
+)
 
 type Table struct {
 	SmiNode
@@ -28,12 +24,12 @@ func (t SmiNode) AsTable() Table {
 	}
 }
 
-func (t SmiNode) getRow() (row *C.struct_SmiNode) {
+func (t SmiNode) getRow() (row *types.SmiNode) {
 	switch t.Kind {
 	case types.NodeRow:
 		row = t.GetRaw()
 	case types.NodeTable:
-		row = C.smiGetFirstChildNode(t.smiNode)
+		row = smi.GetFirstChildNode(t.smiNode)
 		if row == nil {
 			return
 		}
@@ -41,7 +37,7 @@ func (t SmiNode) getRow() (row *C.struct_SmiNode) {
 		return
 	}
 
-	if types.NodeKind(row.nodekind) != types.NodeRow {
+	if row.NodeKind != types.NodeRow {
 		// TODO: error
 		return nil
 	}
@@ -66,8 +62,8 @@ func (t SmiNode) GetColumns() (columns map[string]SmiNode, columnOrder []string)
 	columns = make(map[string]SmiNode)
 	columnOrder = make([]string, 0, 2)
 
-	for smiColumn := C.smiGetFirstChildNode(row); smiColumn != nil; smiColumn = C.smiGetNextChildNode(smiColumn) {
-		if types.NodeKind(smiColumn.nodekind) != types.NodeColumn {
+	for smiColumn := smi.GetFirstChildNode(row); smiColumn != nil; smiColumn = smi.GetNextChildNode(smiColumn) {
+		if smiColumn.NodeKind != types.NodeColumn {
 			// TODO: error
 			return
 		}
@@ -78,13 +74,13 @@ func (t SmiNode) GetColumns() (columns map[string]SmiNode, columnOrder []string)
 	return
 }
 
-func (t SmiNode) GetImplied() (implied bool) {
+func (t SmiNode) GetImplied() bool {
 	row := t.getRow()
 	if row == nil {
 		return false
 	}
 
-	return int(row.implied) > 0
+	return row.Implied
 }
 
 func (t SmiNode) GetAugment() (row SmiNode) {
@@ -93,16 +89,16 @@ func (t SmiNode) GetAugment() (row SmiNode) {
 		return
 	}
 
-	if types.IndexKind(smiRow.indexkind) != types.IndexAugment {
+	if smiRow.IndexKind != types.IndexAugment {
 		return
 	}
 
-	smiRow = C.smiGetRelatedNode(smiRow)
+	smiRow = smi.GetRelatedNode(smiRow)
 	if smiRow == nil {
 		return
 	}
 
-	if types.NodeKind(smiRow.nodekind) != types.NodeRow {
+	if smiRow.NodeKind != types.NodeRow {
 		// TODO: error
 		return
 	}
@@ -116,28 +112,28 @@ func (t SmiNode) GetIndex() (index []SmiNode) {
 		return
 	}
 
-	if types.IndexKind(row.indexkind) == types.IndexAugment {
-		row = C.smiGetRelatedNode(row)
+	if row.IndexKind == types.IndexAugment {
+		row = smi.GetRelatedNode(row)
 		if row == nil {
 			return
 		}
 
-		if types.NodeKind(row.nodekind) != types.NodeRow {
+		if row.NodeKind != types.NodeRow {
 			// TODO: error
 			return
 		}
-	} else if types.IndexKind(row.indexkind) != types.IndexIndex {
+	} else if row.IndexKind != types.IndexIndex {
 		// TODO: unsupported
 		return
 	}
 
-	for smiElement := C.smiGetFirstElement(row); smiElement != nil; smiElement = C.smiGetNextElement(smiElement) {
-		smiColumn := C.smiGetElementNode(smiElement)
+	for smiElement := smi.GetFirstElement(row); smiElement != nil; smiElement = smi.GetNextElement(smiElement) {
+		smiColumn := smi.GetElementNode(smiElement)
 		if smiColumn == nil {
 			// TODO: error
 			return
 		}
-		if types.NodeKind(smiColumn.nodekind) != types.NodeColumn {
+		if smiColumn.NodeKind != types.NodeColumn {
 			// TODO: error
 			return
 		}

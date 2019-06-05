@@ -2,25 +2,27 @@ package parser
 
 import (
 	"github.com/alecthomas/participle/lexer"
+
+	"github.com/sleepinggenius2/gosmi/types"
 )
 
 type AgentCapabilityVariation struct {
 	Pos lexer.Position
 
-	Name        Identifier   `parser:"\"VARIATION\" @Ident"` // Required
-	Syntax      *Syntax      `parser:"( \"SYNTAX\" @@ )?"`
-	WriteSyntax *Syntax      `parser:"( \"WRITE-SYNTAX\" @@ )?"`
-	Access      *Access      `parser:"( \"ACCESS\" @( \"write-only\" | \"not-implemented\" | \"accessible-for-notify\" | \"read-only\" | \"read-write\" | \"read-create\" ) )?"`
-	Creation    []Identifier `parser:"( \"CREATION-REQUIRES\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\" )?"`
-	Defval      *string      `parser:"( \"DEFVAL\" \"{\" @( \"-\"? Int | BinString | HexString | Text | Ident | ( \"{\" ( Int+ | ( Ident ( \",\" Ident )* \",\"? )? ) \"}\" ) ) \"}\" )?"`
-	Description string       `parser:"\"DESCRIPTION\" @Text"` // Required
+	Name        types.SmiIdentifier   `parser:"\"VARIATION\" @Ident"` // Required
+	Syntax      *Syntax               `parser:"( \"SYNTAX\" @@ )?"`
+	WriteSyntax *Syntax               `parser:"( \"WRITE-SYNTAX\" @@ )?"`
+	Access      *Access               `parser:"( \"ACCESS\" @( \"write-only\" | \"not-implemented\" | \"accessible-for-notify\" | \"read-only\" | \"read-write\" | \"read-create\" ) )?"`
+	Creation    []types.SmiIdentifier `parser:"( \"CREATION-REQUIRES\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\" )?"`
+	Defval      *string               `parser:"( \"DEFVAL\" \"{\" @( \"-\"? Int | BinString | HexString | Text | Ident | ( \"{\" ( Int+ | ( Ident ( \",\" Ident )* \",\"? )? ) \"}\" ) ) \"}\" )?"`
+	Description string                `parser:"\"DESCRIPTION\" @Text"` // Required
 }
 
 type AgentCapabilityModule struct {
 	Pos lexer.Position
 
-	Module     Identifier                 `parser:"\"SUPPORTS\" @Ident"`                                      // Required
-	Includes   []Identifier               `parser:"\"INCLUDES\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\""` // Required
+	Module     types.SmiIdentifier        `parser:"\"SUPPORTS\" @Ident"`                                      // Required
+	Includes   []types.SmiIdentifier      `parser:"\"INCLUDES\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\""` // Required
 	Variations []AgentCapabilityVariation `parser:"@@*"`
 }
 
@@ -28,28 +30,27 @@ type AgentCapabilities struct {
 	Pos lexer.Position
 
 	ProductRelease string                  `parser:"\"PRODUCT-RELEASE\" @Text"`                  // Required
-	Status         string                  `parser:"\"STATUS\" @( \"current\" | \"obsolete\" )"` // Required
+	Status         Status                  `parser:"\"STATUS\" @( \"current\" | \"obsolete\" )"` // Required
 	Description    string                  `parser:"\"DESCRIPTION\" @Text"`                      // Required
-	Reference      *string                 `parser:"( \"REFERENCE\" @Text )?"`
+	Reference      string                  `parser:"( \"REFERENCE\" @Text )?"`
 	Modules        []AgentCapabilityModule `parser:"@@*"`
-	Oid            Oid                     `parser:"Assign \"{\" @@ \"}\""`
 }
 
 type ComplianceGroup struct {
 	Pos lexer.Position
 
-	Name        Identifier `parser:"\"GROUP\" @Ident"`
-	Description string     `parser:"\"DESCRIPTION\" @Text"`
+	Name        types.SmiIdentifier `parser:"\"GROUP\" @Ident"`
+	Description string              `parser:"\"DESCRIPTION\" @Text"`
 }
 
 type ComplianceObject struct {
 	Pos lexer.Position
 
-	Name        Identifier `parser:"\"OBJECT\" @Ident"`
-	Syntax      *Syntax    `parser:"( \"SYNTAX\" @@ )?"`
-	WriteSyntax *Syntax    `parser:"( \"WRITE-SYNTAX\" @@ )?"`
-	MinAccess   *Access    `parser:"( \"MIN-ACCESS\" @( \"not-accessible\" | \"accessible-for-notify\" | \"read-only\" | \"read-write\" | \"read-create\" ) )?"`
-	Description string     `parser:"\"DESCRIPTION\" @Text"`
+	Name        types.SmiIdentifier `parser:"\"OBJECT\" @Ident"`
+	Syntax      *Syntax             `parser:"( \"SYNTAX\" @@ )?"`
+	WriteSyntax *Syntax             `parser:"( \"WRITE-SYNTAX\" @@ )?"`
+	MinAccess   *Access             `parser:"( \"MIN-ACCESS\" @( \"not-accessible\" | \"accessible-for-notify\" | \"read-only\" | \"read-write\" | \"read-create\" ) )?"`
+	Description string              `parser:"\"DESCRIPTION\" @Text"`
 }
 
 type Compliance struct {
@@ -81,9 +82,9 @@ func (n *ComplianceModuleName) Parse(lex lexer.PeekingLexer) error {
 type ModuleComplianceModule struct {
 	Pos lexer.Position
 
-	Name            ComplianceModuleName `parser:"@@"`
-	MandatoryGroups []Identifier         `parser:"( \"MANDATORY-GROUPS\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\" )?"`
-	Compliances     []Compliance         `parser:"@@*"`
+	Name            ComplianceModuleName  `parser:"@@"`
+	MandatoryGroups []types.SmiIdentifier `parser:"( \"MANDATORY-GROUPS\" \"{\" @Ident ( \",\" @Ident )* \",\"? \"}\" )?"`
+	Compliances     []Compliance          `parser:"@@*"`
 }
 
 type ModuleCompliance struct {
@@ -91,7 +92,6 @@ type ModuleCompliance struct {
 
 	Status      Status                   `parser:"\"STATUS\" @( \"current\" | \"deprecated\" | \"obsolete\" )"` // Required
 	Description string                   `parser:"\"DESCRIPTION\" @Text"`                                       // Required
-	Reference   *string                  `parser:"( \"REFERENCE\" @Text )?"`
+	Reference   string                   `parser:"( \"REFERENCE\" @Text )?"`
 	Modules     []ModuleComplianceModule `parser:"( \"MODULE\" @@ )+"`
-	Oid         Oid                      `parser:"Assign \"{\" @@ \"}\""`
 }

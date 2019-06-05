@@ -1,11 +1,13 @@
-package models
+package types
 
 import (
 	"strconv"
 	"strings"
 )
 
-type Oid []uint32
+type SmiSubId uint32
+
+type Oid []SmiSubId
 
 func (o Oid) After(oid Oid) bool {
 	myLen := len(o)
@@ -63,6 +65,12 @@ func (o Oid) String() string {
 	return strings.Join(oidParts, ".")
 }
 
+func NewOid(parent Oid, subId SmiSubId) Oid {
+	oid := make(Oid, len(parent), len(parent)+1)
+	copy(oid, parent)
+	return append(oid, subId)
+}
+
 func OidFromString(s string) (Oid, error) {
 	oidParts := strings.Split(strings.Trim(s, "."), ".")
 	oid := make(Oid, len(oidParts))
@@ -71,7 +79,7 @@ func OidFromString(s string) (Oid, error) {
 		if err != nil {
 			return nil, err
 		}
-		oid[i] = uint32(oidPart)
+		oid[i] = SmiSubId(oidPart)
 	}
 	return oid, nil
 }

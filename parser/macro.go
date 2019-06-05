@@ -3,6 +3,8 @@ package parser
 import (
 	"github.com/alecthomas/participle/lexer"
 	"github.com/pkg/errors"
+
+	"github.com/sleepinggenius2/gosmi/types"
 )
 
 type MacroBody struct {
@@ -89,6 +91,6 @@ func (m *MacroBody) Parse(lex lexer.PeekingLexer) error {
 type Macro struct {
 	Pos lexer.Position
 
-	Name Identifier `parser:"@Ident \"MACRO\" Assign"`
-	Body MacroBody  `parser:"@@"`
+	Name types.SmiIdentifier `parser:"@Ident \"MACRO\" Assign"`
+	Body MacroBody           `parser:"@@"`
 }

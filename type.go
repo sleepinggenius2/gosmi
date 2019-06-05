@@ -1,24 +1,16 @@
 package gosmi
 
-/*
-#cgo LDFLAGS: -lsmi
-#include <stdlib.h>
-#include <smi.h>
-*/
-import "C"
-
 import (
-	"encoding/binary"
 	"fmt"
-	"unsafe"
 
 	"github.com/sleepinggenius2/gosmi/models"
+	"github.com/sleepinggenius2/gosmi/smi"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
 type SmiType struct {
 	models.Type
-	smiType *C.struct_SmiType
+	smiType *types.SmiType
 }
 
 func (t *SmiType) getEnum() {
@@ -26,18 +18,18 @@ func (t *SmiType) getEnum() {
 		return
 	}
 
-	smiNamedNumber := C.smiGetFirstNamedNumber(t.smiType)
+	smiNamedNumber := smi.GetFirstNamedNumber(t.smiType)
 	if smiNamedNumber == nil {
 		return
 	}
 
 	enum := models.Enum{
-		BaseType: types.BaseType(smiNamedNumber.value.basetype),
+		BaseType: types.BaseType(smiNamedNumber.Value.BaseType),
 	}
-	for ; smiNamedNumber != nil; smiNamedNumber = C.smiGetNextNamedNumber(smiNamedNumber) {
+	for ; smiNamedNumber != nil; smiNamedNumber = smi.GetNextNamedNumber(smiNamedNumber) {
 		namedNumber := models.NamedNumber{
-			Name:  C.GoString(smiNamedNumber.name),
-			Value: convertValue(smiNamedNumber.value),
+			Name:  string(smiNamedNumber.Name),
+			Value: convertValue(smiNamedNumber.Value),
 		}
 		enum.Values = append(enum.Values, namedNumber)
 	}
@@ -46,7 +38,7 @@ func (t *SmiType) getEnum() {
 }
 
 func (t SmiType) GetModule() (module SmiModule) {
-	smiModule := C.smiGetTypeModule(t.smiType)
+	smiModule := smi.GetTypeModule(t.smiType)
 	return CreateModule(smiModule)
 }
 
@@ -57,12 +49,12 @@ func (t *SmiType) getRanges() {
 
 	ranges := make([]models.Range, 0)
 	// Workaround for libsmi bug that causes ranges to loop infinitely sometimes
-	var currSmiRange *C.struct_SmiRange
-	for smiRange := C.smiGetFirstRange(t.smiType); smiRange != nil && smiRange != currSmiRange; smiRange = C.smiGetNextRange(smiRange) {
+	var currSmiRange *types.SmiRange
+	for smiRange := smi.GetFirstRange(t.smiType); smiRange != nil && smiRange != currSmiRange; smiRange = smi.GetNextRange(smiRange) {
 		r := models.Range{
-			BaseType: types.BaseType(smiRange.minValue.basetype),
-			MinValue: convertValue(smiRange.minValue),
-			MaxValue: convertValue(smiRange.maxValue),
+			BaseType: smiRange.MinValue.BaseType,
+			MinValue: convertValue(smiRange.MinValue),
+			MaxValue: convertValue(smiRange.MaxValue),
 		}
 		ranges = append(ranges, r)
 		currSmiRange = smiRange
@@ -74,33 +66,33 @@ func (t SmiType) String() string {
 	return t.Type.String()
 }
 
-func (t SmiType) GetRaw() (outType *C.struct_SmiType) {
+func (t SmiType) GetRaw() (outType *types.SmiType) {
 	return t.smiType
 }
 
-func (t *SmiType) SetRaw(smiType *C.struct_SmiType) {
+func (t *SmiType) SetRaw(smiType *types.SmiType) {
 	t.smiType = smiType
 }
 
-func CreateType(smiType *C.struct_SmiType) (outType SmiType) {
+func CreateType(smiType *types.SmiType) (outType SmiType) {
 	if smiType == nil {
 		return
 	}
 
 	outType.SetRaw(smiType)
-	outType.BaseType = types.BaseType(smiType.basetype)
+	outType.BaseType = smiType.BaseType
 
-	if smiType.name == nil {
-		smiType = C.smiGetParentType(smiType)
+	if smiType.Name == "" {
+		smiType = smi.GetParentType(smiType)
 	}
 
-	outType.Decl = types.Decl(smiType.decl)
-	outType.Description = C.GoString(smiType.description)
-	outType.Format = C.GoString(smiType.format)
-	outType.Name = C.GoString(smiType.name)
-	outType.Reference = C.GoString(smiType.reference)
-	outType.Status = types.Status(smiType.status)
-	outType.Units = C.GoString(smiType.units)
+	outType.Decl = smiType.Decl
+	outType.Description = smiType.Description
+	outType.Format = smiType.Format
+	outType.Name = string(smiType.Name)
+	outType.Reference = smiType.Reference
+	outType.Status = smiType.Status
+	outType.Units = smiType.Units
 
 	outType.getEnum()
 	outType.getRanges()
@@ -108,8 +100,8 @@ func CreateType(smiType *C.struct_SmiType) (outType SmiType) {
 	return
 }
 
-func CreateTypeFromNode(smiNode *C.struct_SmiNode) (outType *SmiType) {
-	smiType := C.smiGetNodeType(smiNode)
+func CreateTypeFromNode(smiNode *types.SmiNode) (outType *SmiType) {
+	smiType := smi.GetNodeType(smiNode)
 
 	if smiType == nil {
 		return
@@ -118,26 +110,23 @@ func CreateTypeFromNode(smiNode *C.struct_SmiNode) (outType *SmiType) {
 	tempType := CreateType(smiType)
 	outType = &tempType
 
-	if format := C.GoString(smiNode.format); format != "" {
-		outType.Format = format
+	if smiNode.Format != "" {
+		outType.Format = smiNode.Format
 	}
-	if units := C.GoString(smiNode.units); units != "" {
-		outType.Units = units
+	if smiNode.Units != "" {
+		outType.Units = smiNode.Units
 	}
 
 	return
 }
 
 func GetType(name string, module ...SmiModule) (outType SmiType, err error) {
-	var smiModule *C.struct_SmiModule
+	var smiModule *types.SmiModule
 	if len(module) > 0 {
 		smiModule = module[0].GetRaw()
 	}
 
-	cName := C.CString(name)
-	defer C.free(unsafe.Pointer(cName))
-
-	smiType := C.smiGetType(smiModule, cName)
+	smiType := smi.GetType(smiModule, name)
 	if smiType == nil {
 		if len(module) > 0 {
 			err = fmt.Errorf("Could not find type named %s in module %s", name, module[0].Name)
@@ -149,16 +138,16 @@ func GetType(name string, module ...SmiModule) (outType SmiType, err error) {
 	return CreateType(smiType), nil
 }
 
-func convertValue(value C.struct_SmiValue) (outValue int64) {
-	switch types.BaseType(value.basetype) {
-	case types.BaseTypeInteger32:
-		outValue = int64(int32(binary.LittleEndian.Uint32(value.value[:4])))
-	case types.BaseTypeInteger64:
-		outValue = int64(binary.LittleEndian.Uint64(value.value[:8]))
-	case types.BaseTypeUnsigned32:
-		outValue = int64(binary.LittleEndian.Uint32(value.value[:4]))
-	case types.BaseTypeUnsigned64:
-		outValue = int64(binary.LittleEndian.Uint64(value.value[:8]))
+func convertValue(value types.SmiValue) (outValue int64) {
+	switch v := value.Value.(type) {
+	case int32:
+		outValue = int64(v)
+	case int64:
+		outValue = int64(v)
+	case uint32:
+		outValue = int64(v)
+	case uint64:
+		outValue = int64(v)
 	}
 	return
 }

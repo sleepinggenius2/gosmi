@@ -85,7 +85,7 @@ func (t Type) String() string {
 	return fmt.Sprintf("Type[%s Status=%s, Format=%s, Units=%s]", typeStr, t.Status, t.Format, t.Units)
 }
 
-func (t Type) indexValueEnum(value interface{}) ([]uint32, error) {
+func (t Type) indexValueEnum(value interface{}) (types.Oid, error) {
 	var intVal int64
 	var err error
 	if strVal, ok := value.(string); ok && t.Enum != nil {
@@ -99,10 +99,10 @@ func (t Type) indexValueEnum(value interface{}) ([]uint32, error) {
 	if intVal < 0 || intVal > 0xffffffff {
 		return nil, errors.New("Integer value outside of range")
 	}
-	return []uint32{uint32(intVal)}, nil
+	return types.Oid{types.SmiSubId(intVal)}, nil
 }
 
-func (t Type) indexValueInteger(value interface{}) ([]uint32, error) {
+func (t Type) indexValueInteger(value interface{}) (types.Oid, error) {
 	intVal, err := ToInt64(value)
 	if err != nil {
 		return nil, err
@@ -110,23 +110,23 @@ func (t Type) indexValueInteger(value interface{}) ([]uint32, error) {
 	if intVal < 0 || intVal > 0xffffffff {
 		return nil, errors.New("Integer value outside of range")
 	}
-	return []uint32{uint32(intVal)}, nil
+	return types.Oid{types.SmiSubId(intVal)}, nil
 }
 
-func (t Type) indexValueObjectIdentifier(value []uint32, implied bool) ([]uint32, error) {
+func (t Type) indexValueObjectIdentifier(value types.Oid, implied bool) (types.Oid, error) {
 	var offset int
 	if !implied {
 		offset = 1
 	}
-	ret := make([]uint32, len(value)+offset)
+	ret := make(types.Oid, len(value)+offset)
 	if !implied {
-		ret[0] = uint32(len(value))
+		ret[0] = types.SmiSubId(len(value))
 	}
 	copy(ret[offset:], value)
 	return ret, nil
 }
 
-func (t Type) indexValueOctetString(value interface{}, implied bool) ([]uint32, error) {
+func (t Type) indexValueOctetString(value interface{}, implied bool) (types.Oid, error) {
 	var bytes []byte
 	switch v := value.(type) {
 	case []byte:
@@ -136,22 +136,22 @@ func (t Type) indexValueOctetString(value interface{}, implied bool) ([]uint32, 
 	default:
 		return nil, errors.New("Invalid octet string value")
 	}
-	var ret []uint32
+	var ret types.Oid
 	var offset int
 	if implied {
-		ret = make([]uint32, len(bytes))
+		ret = make(types.Oid, len(bytes))
 	} else {
-		ret = make([]uint32, len(bytes)+1)
-		ret[0] = uint32(len(bytes))
+		ret = make(types.Oid, len(bytes)+1)
+		ret[0] = types.SmiSubId(len(bytes))
 		offset = 1
 	}
 	for i, b := range bytes {
-		ret[i+offset] = uint32(b)
+		ret[i+offset] = types.SmiSubId(b)
 	}
 	return ret, nil
 }
 
-func (t Type) IndexValue(value interface{}, implied bool) ([]uint32, error) {
+func (t Type) IndexValue(value interface{}, implied bool) (types.Oid, error) {
 	switch t.BaseType {
 	case types.BaseTypeEnum:
 		return t.indexValueEnum(value)
@@ -160,11 +160,17 @@ func (t Type) IndexValue(value interface{}, implied bool) ([]uint32, error) {
 	case types.BaseTypeObjectIdentifier:
 		switch v := value.(type) {
 		case []uint32:
-			return t.indexValueObjectIdentifier(v, implied)
-		case Oid:
+			oid := make(types.Oid, len(v))
+			for i, subId := range v {
+				oid[i] = types.SmiSubId(subId)
+			}
+			return t.indexValueObjectIdentifier(oid, implied)
+		case []types.SmiSubId:
+			return t.indexValueObjectIdentifier(types.Oid(v), implied)
+		case types.Oid:
 			return t.indexValueObjectIdentifier(v, implied)
 		case string:
-			oid, err := OidFromString(v)
+			oid, err := types.OidFromString(v)
 			if err != nil {
 				return nil, err
 			}
