@@ -1,124 +1,19 @@
 # gosmi
 
-Go wrapper around libsmi
+Starting with v0.2.0, this library is native Go and no longer a wrapper around libsmi. The implementation is currently very close, but may change in the future.
+
+For the native implementation, two additional components have been added:
+
+* SMIv1/2 parser in [parser](parser)
+* libsmi-compatible Go implementation in [smi](smi)
 
 ## Usage
-On Ubuntu: `$ sudo apt-get install libsmi2-dev`
 
-### Example
-```go
-package main
+On Ubuntu for v0.1.0 and below: `$ sudo apt-get install libsmi2-dev`
 
-import (
-	"encoding/json"
-	"flag"
-	"fmt"
-	"os"
-	"strings"
+### Examples
 
-	"github.com/sleepinggenius2/gosmi"
-)
+Examples can now be found in:
 
-type arrayStrings []string
-
-var modules arrayStrings
-var paths arrayStrings
-var debug bool
-
-func (a arrayStrings) String() string {
-	return strings.Join(a, ",")
-}
-
-func (a *arrayStrings) Set(value string) error {
-	*a = append(*a, value)
-	return nil
-}
-
-func main() {
-	flag.BoolVar(&debug, "d", false, "Debug")
-	flag.Var(&modules, "m", "Module to load")
-	flag.Var(&paths, "p", "Path to add")
-	flag.Parse()
-
-	Init()
-
-	oid := flag.Arg(0)
-	if oid == "" {
-		ModuleTrees()
-	} else {
-		Subtree(oid)
-	}
-
-	Exit()
-}
-
-func Init() {
-	gosmi.Init()
-
-	for _, path := range paths {
-		gosmi.AppendPath(path)
-	}
-
-	for _, module := range modules {
-		moduleName, err := gosmi.LoadModule(module)
-		if err != nil {
-			fmt.Println("Error: %s\n", err)
-			return
-		}
-		if debug {
-			fmt.Printf("Loaded module %s\n", moduleName)
-		}
-	}
-
-	if debug {
-		path := gosmi.GetPath()
-		fmt.Printf("Search path: %s\n", path)
-		loadedModules := gosmi.GetLoadedModules()
-		fmt.Println("Loaded modules:")
-		for _, loadedModule := range loadedModules {
-			fmt.Printf("  %s (%s)\n", loadedModule.Name, loadedModule.Path)
-		}
-	}
-}
-
-func Exit() {
-	gosmi.Exit()
-}
-
-func Subtree(oid string) {
-	node, err := gosmi.GetNode(oid)
-	if err != nil {
-		fmt.Printf("Subtree Error: %s", err)
-		return
-	}
-
-	subtree := node.GetSubtree()
-
-	jsonBytes, _ := json.Marshal(subtree)
-	os.Stdout.Write(jsonBytes)
-}
-
-func ModuleTrees() {
-	for _, module := range modules {
-		m, err := gosmi.GetModule(module)
-		if err != nil {
-			fmt.Printf("Module Trees Error: %s\n", err)
-			continue
-		}
-
-		nodes := m.GetNodes()
-		types := m.GetTypes()
-
-		jsonBytes, _ := json.Marshal(struct {
-			Module gosmi.Module
-			Nodes  []gosmi.Node
-			Types  []gosmi.Type
-		}{
-			Module: m,
-			Nodes:  nodes,
-			Types:  types,
-		})
-		os.Stdout.Write(jsonBytes)
-	}
-}
-```
+* [cmd/parse](cmd/parse)
+* [cmd/smi](cmd/smi)
