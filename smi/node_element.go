@@ -13,6 +13,9 @@ func GetFirstElement(smiNodePtr *types.SmiNode) *types.SmiElement {
 		return nil
 	}
 	objPtr := (*internal.Object)(unsafe.Pointer(smiNodePtr))
+	if objPtr.List == nil {
+		return nil
+	}
 	return &objPtr.List.SmiElement
 }
 
