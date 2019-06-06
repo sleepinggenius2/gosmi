@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"sort"
 	"strconv"
 
 	"github.com/sleepinggenius2/gosmi/parser"
@@ -205,3 +206,30 @@ func GetValueInt32(value string) int32   { return int32(getValueInt(value, 32)) 
 func GetValueUint32(value string) uint32 { return uint32(getValueUint(value, 32)) }
 func GetValueInt64(value string) int64   { return getValueInt(value, 64) }
 func GetValueUint64(value string) uint64 { return getValueUint(value, 64) }
+
+func intStringLess(a, b string) bool {
+	if a[0] == '-' {
+		if b[0] == '-' {
+			if len(a) < len(b) {
+				return false
+			}
+			return len(a) > len(b) || a[1:] > b[1:]
+		}
+		return true
+	} else if b[0] == '-' || len(a) > len(b) {
+		return false
+	}
+	return len(a) < len(b) || a < b
+}
+
+func namedNumberSort(namedNumbers []parser.NamedNumber) {
+	sort.Slice(namedNumbers, func(i, j int) bool {
+		return intStringLess(namedNumbers[i].Value, namedNumbers[j].Value)
+	})
+}
+
+func rangeSort(ranges []parser.Range) {
+	sort.Slice(ranges, func(i, j int) bool {
+		return intStringLess(ranges[i].Start, ranges[j].Start)
+	})
+}
