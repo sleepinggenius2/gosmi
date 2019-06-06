@@ -29,6 +29,24 @@ type Module struct {
 	Prev                   *Module
 	Next                   *Module
 	PrefixNode             *Node
+
+	pending map[types.SmiIdentifier]*Object
+}
+
+func (x *Module) addPending(name types.SmiIdentifier) *Object {
+	if x.pending == nil {
+		x.pending = make(map[types.SmiIdentifier]*Object)
+	}
+	obj := new(Object)
+	x.pending[name] = obj
+	return obj
+}
+
+func (x *Module) getPending(name types.SmiIdentifier) *Object {
+	if x.pending == nil {
+		return nil
+	}
+	return x.pending[name]
 }
 
 func (x *Module) AddRevision(revision *Revision) {
@@ -62,6 +80,10 @@ func (x *Module) GetObject(name types.SmiIdentifier) *Object {
 	if obj != nil {
 		return obj
 	}
+	obj = x.getPending(name)
+	if obj != nil {
+		return obj
+	}
 	wellKnown := smiHandle.Modules.Get(WellKnownModuleName)
 	if wellKnown != nil {
 		obj = wellKnown.Objects.Get(name)
@@ -71,7 +93,7 @@ func (x *Module) GetObject(name types.SmiIdentifier) *Object {
 	}
 	i := x.Imports.Get(name)
 	if i == nil {
-		return nil
+		return x.addPending(name)
 	}
 	i.Used = true
 	module, err := GetModule(i.Module.String())
@@ -183,7 +205,7 @@ type ImportMap struct {
 
 func (x *ImportMap) Add(i *Import) {
 	i.Prev = x.last
-	if x.First == nil {
+	if x.last == nil {
 		x.First = i
 	} else {
 		x.last.Next = i
@@ -195,7 +217,8 @@ func (x *ImportMap) Add(i *Import) {
 	}
 	x.m[i.Name] = i
 	if newImport, ok := importConversions[i.SmiImport]; ok {
-		i.SmiImport = newImport
+		i.SmiImport.Module = newImport.Module
+		i.SmiImport.Name = newImport.Name
 	}
 }
 
@@ -427,7 +450,7 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 		}
 		currType.BaseType = parentType.BaseType
 		currType.Parent = parentType
-		if syntax.SubType != nil {
+		if syntax.SubType != nil && currType.Name != "Integer32" {
 			var ranges []parser.Range
 			baseType := currType.BaseType
 			if baseType == types.BaseTypeOctetString {
@@ -435,7 +458,11 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 				baseType = types.BaseTypeUnsigned32
 			} else {
 				ranges = syntax.SubType.Integer
+				if baseType == types.BaseTypeBits {
+					baseType = types.BaseTypeUnsigned32
+				}
 			}
+			rangeSort(ranges)
 			for _, r := range ranges {
 				if r.End == "" {
 					r.End = r.Start
@@ -443,6 +470,7 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 				currType.AddRange(GetValue(r.Start, baseType), GetValue(r.End, baseType))
 			}
 		} else if len(syntax.Enum) > 0 {
+			namedNumberSort(syntax.Enum)
 			for _, nn := range syntax.Enum {
 				currType.AddNamedNumber(nn.Name, GetValue(nn.Value, currType.BaseType))
 			}
@@ -465,13 +493,13 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 
 	var currObject *Object
 	for _, node := range in.Body.Nodes {
-		currObject = &Object{
-			SmiNode: types.SmiNode{
-				Name: node.Name,
-			},
-			Module: out,
-			Line:   node.Pos.Line,
+		currObject = out.getPending(node.Name)
+		if currObject == nil {
+			currObject = new(Object)
 		}
+		currObject.Name = node.Name
+		currObject.Module = out
+		currObject.Line = node.Pos.Line
 
 		switch {
 		case node.ObjectIdentifier:
@@ -503,9 +531,15 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 				currObject.NodeKind = types.NodeRow
 				currObject.IndexKind = types.IndexIndex
 				currObject.Implied = objType.Index[len(objType.Index)-1].Implied
+				indices := make([]types.SmiIdentifier, len(objType.Index))
+				for i, index := range objType.Index {
+					indices[i] = index.Name
+				}
+				currObject.AddElements(indices)
 			} else if objType.Augments != nil {
 				currObject.NodeKind = types.NodeRow
 				currObject.IndexKind = types.IndexAugment
+				currObject.Related = out.GetObject(*objType.Augments)
 			} else if objType.Syntax.Sequence != nil {
 				currObject.NodeKind = types.NodeTable
 			} else {
@@ -514,15 +548,16 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 				} else {
 					currObject.NodeKind = types.NodeScalar
 				}
-				parentType := GetBaseTypeFromSyntax(*objType.Syntax.Type)
+				syntax := *objType.Syntax.Type
+				parentType := GetBaseTypeFromSyntax(syntax)
 				if parentType == nil {
-					parentType = out.GetType(objType.Syntax.Type.Name)
+					parentType = out.GetType(syntax.Name)
 					if parentType == nil {
 						// What do we do here?
 						break
 					}
 				}
-				if objType.Syntax.Type.SubType == nil && len(objType.Syntax.Type.Enum) == 0 {
+				if syntax.SubType == nil && len(syntax.Enum) == 0 {
 					currObject.Type = parentType
 					break
 				}
@@ -534,24 +569,25 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 					},
 					Module: out,
 					Parent: parentType,
-					Line:   objType.Syntax.Type.Pos.Line,
+					Line:   syntax.Pos.Line,
 				}
 				baseType := currType.BaseType
-				if objType.Syntax.Type.SubType != nil {
+				if syntax.SubType != nil {
 					var ranges []parser.Range
 					if baseType == types.BaseTypeOctetString {
-						ranges = objType.Syntax.Type.SubType.OctetString
+						ranges = syntax.SubType.OctetString
 						baseType = types.BaseTypeUnsigned32
 					} else {
-						ranges = objType.Syntax.Type.SubType.Integer
+						ranges = syntax.SubType.Integer
 					}
+					rangeSort(ranges)
 					for _, r := range ranges {
 						if r.End == "" {
 							r.End = r.Start
 						}
 						currType.AddRange(GetValue(r.Start, baseType), GetValue(r.End, baseType))
 					}
-				} else if len(objType.Syntax.Type.Enum) > 0 {
+				} else if len(syntax.Enum) > 0 {
 					if baseType == types.BaseTypeEnum {
 						if parentType.List == nil || parentType.List.Ptr == nil {
 							// TODO: Figure out a better option. This should never happen.
@@ -559,16 +595,27 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 						} else {
 							baseType = parentType.List.Ptr.(*NamedNumber).Value.BaseType
 						}
+					} else if baseType == types.BaseTypeBits {
+						baseType = types.BaseTypeUnsigned32
 					}
-					for _, nn := range objType.Syntax.Type.Enum {
+					namedNumberSort(syntax.Enum)
+					for _, nn := range syntax.Enum {
 						currType.AddNamedNumber(nn.Name, GetValue(nn.Value, baseType))
 					}
-					if parentType.Module != nil && !parentType.Module.IsWellKnown() {
-						currType.Name = parentType.Name
+					if currType.BaseType == types.BaseTypeBits {
+						if parentType == smiHandle.TypeBits {
+							currType.Name = "Bits"
+						} else {
+							currType.Name = parentType.Name
+						}
 					} else {
-						currType.Name = "Enumeration"
+						if parentType.Module == nil || parentType.Module.IsWellKnown() {
+							currType.Name = "Enumeration"
+						} else {
+							currType.Name = parentType.Name
+						}
+						currType.BaseType = types.BaseTypeEnum
 					}
-					currType.BaseType = types.BaseTypeEnum
 				}
 				currObject.Type = currType
 			}
