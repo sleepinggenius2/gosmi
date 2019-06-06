@@ -22,7 +22,7 @@ func GetFirstImport(smiModulePtr *types.SmiModule) *types.SmiImport {
 
 // SmiImport *smiGetNextImport(SmiImport *smiImportPtr)
 func GetNextImport(smiImportPtr *types.SmiImport) *types.SmiImport {
-	if smiImportPtr != nil {
+	if smiImportPtr == nil {
 		return nil
 	}
 	importPtr := (*internal.Import)(unsafe.Pointer(smiImportPtr))
