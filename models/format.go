@@ -112,6 +112,8 @@ func ToInt64(value interface{}) (val int64, err error) {
 		val = int64(value)
 	case uint32:
 		val = int64(value)
+	case types.SmiSubId:
+		val = int64(value)
 	case string:
 		return strconv.ParseInt(value, 10, 64)
 	default:
