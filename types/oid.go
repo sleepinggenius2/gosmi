@@ -72,7 +72,7 @@ func NewOid(parent Oid, subId SmiSubId) Oid {
 }
 
 func OidFromString(s string) (Oid, error) {
-	oidParts := strings.Split(strings.Trim(s, "."), ".")
+	oidParts := strings.Split(strings.Trim(strings.TrimSpace(s), "."), ".")
 	oid := make(Oid, len(oidParts))
 	for i := range oidParts {
 		oidPart, err := strconv.ParseUint(oidParts[i], 10, 32)
