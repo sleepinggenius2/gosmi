@@ -83,3 +83,12 @@ func OidFromString(s string) (Oid, error) {
 	}
 	return oid, nil
 }
+
+// Helper for defining constants from strings
+func OidMustFromString(s string) Oid {
+	oid, err := OidFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return oid
+}
