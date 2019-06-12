@@ -117,7 +117,7 @@ func (x *Module) GetType(name types.SmiIdentifier) *Type {
 	if err != nil {
 		return nil
 	}
-	return module.GetType(name)
+	return module.GetType(i.Name)
 }
 
 func (x *Module) IsWellKnown() bool {
@@ -217,8 +217,8 @@ func (x *ImportMap) Add(i *Import) {
 	}
 	x.m[i.Name] = i
 	if newImport, ok := importConversions[i.SmiImport]; ok {
-		i.SmiImport.Module = newImport.Module
-		i.SmiImport.Name = newImport.Name
+		i.Module = newImport.Module
+		i.Name = newImport.Name
 	}
 }
 
