@@ -40,7 +40,7 @@ func GetNodeByOID(oid types.Oid) *types.SmiNode {
 		parentPtr, nodePtr *internal.Node
 	)
 	nodePtr = internal.Root()
-	for i < len(oid) {
+	for i = 0; i < len(oid); i++ {
 		parentPtr, nodePtr = nodePtr, nodePtr.Children.Get(oid[i])
 		if nodePtr == nil {
 			if parentPtr.FirstObject == nil {
