@@ -35,21 +35,14 @@ func GetNodeByOID(oid types.Oid) *types.SmiNode {
 	if len(oid) == 0 || internal.Root() == nil {
 		return nil
 	}
-	var (
-		i                  int
-		parentPtr, nodePtr *internal.Node
-	)
-	nodePtr = internal.Root()
-	for i < len(oid) {
+	var parentPtr, nodePtr *internal.Node = nil, internal.Root()
+	for i := 0; i < len(oid) && nodePtr != nil; i++ {
 		parentPtr, nodePtr = nodePtr, nodePtr.Children.Get(oid[i])
-		if nodePtr == nil {
-			if parentPtr.FirstObject == nil {
-				return nil
-			}
-			return parentPtr.FirstObject.GetSmiNode()
-		}
 	}
-	if nodePtr.FirstObject == nil {
+	if nodePtr == nil {
+		nodePtr = parentPtr
+	}
+	if nodePtr == nil || nodePtr.FirstObject == nil {
 		return nil
 	}
 	return nodePtr.FirstObject.GetSmiNode()
