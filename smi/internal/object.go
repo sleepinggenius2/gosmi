@@ -190,7 +190,7 @@ func (x *ObjectMap) linkObject(oid parser.Oid, o *Object) {
 		subId := oid.SubIdentifiers[i]
 		if subId.Name != nil {
 			obj := o.Module.GetObject(*subId.Name)
-			if obj != nil {
+			if obj != nil && obj.Node != nil {
 				parentName = ""
 				parentNodePtr = obj.Node
 				continue
