@@ -251,7 +251,12 @@ func GetModulePath(name string) (string, error) {
 	}
 	// Relative or absolute
 	if name[0] == '.' || name[0] == '~' || filepath.IsAbs(name) {
-		return expandPath(name)
+		dir, file := filepath.Split(name)
+		dir, err := expandPath(dir)
+		if err != nil {
+			return "", errors.Wrap(err, "Expand path")
+		}
+		return filepath.Join(dir, file), nil
 	}
 
 	if filepath.Ext(name) != "" {
