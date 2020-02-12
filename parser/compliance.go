@@ -62,7 +62,7 @@ type Compliance struct {
 
 type ComplianceModuleName string
 
-func (n *ComplianceModuleName) Parse(lex lexer.PeekingLexer) error {
+func (n *ComplianceModuleName) Parse(lex *lexer.PeekingLexer) error {
 	token, err := lex.Peek(0)
 	if err != nil {
 		return err

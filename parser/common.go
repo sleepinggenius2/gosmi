@@ -15,7 +15,7 @@ type SubIdentifier struct {
 	Number *types.SmiSubId
 }
 
-func (x *SubIdentifier) Parse(lex lexer.PeekingLexer) error {
+func (x *SubIdentifier) Parse(lex *lexer.PeekingLexer) error {
 	token, err := lex.Next()
 	if err != nil {
 		return err

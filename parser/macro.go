@@ -15,7 +15,7 @@ type MacroBody struct {
 	Tokens        map[string]string
 }
 
-func (m *MacroBody) Parse(lex lexer.PeekingLexer) error {
+func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 	token, err := lex.Next()
 	if err != nil {
 		return err
