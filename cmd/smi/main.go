@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sleepinggenius2/gosmi"
+	"github.com/sleepinggenius2/gosmi/types"
 )
 
 type arrayStrings []string
@@ -77,7 +78,13 @@ func Exit() {
 }
 
 func Subtree(oid string) {
-	node, err := gosmi.GetNode(oid)
+	var node gosmi.SmiNode
+	var err error
+	if (oid[0] >= '0' && oid[0] <= '9') || oid[0] == '.' {
+		node, err = gosmi.GetNodeByOID(types.OidMustFromString(oid))
+	} else {
+		node, err = gosmi.GetNode(oid)
+	}
 	if err != nil {
 		fmt.Printf("Subtree Error: %s\n", err)
 		return
