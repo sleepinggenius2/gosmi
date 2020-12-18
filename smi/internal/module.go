@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -329,6 +330,19 @@ func LoadModule(name string) (*Module, error) {
 		return nil, errors.Wrap(err, "Build module")
 	}
 	//log.Printf("%s: Built", name)
+	return out, nil
+}
+
+func LoadModuleBytes(modulePath string, moduleBytes []byte) (*Module, error) {
+	moduleReader := bytes.NewReader(moduleBytes)
+	in, err := parser.Parse(moduleReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "Parse module")
+	}
+	out, err := BuildModule(modulePath, in)
+	if err != nil {
+		return nil, errors.Wrap(err, "Build module")
+	}
 	return out, nil
 }
 
