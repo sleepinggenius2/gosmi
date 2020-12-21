@@ -19,4 +19,6 @@ func SetPath(path string)     { smi.SetPath(path) }
 func AppendPath(path string)  { smi.SetPath(string(os.PathListSeparator) + path) }
 func PrependPath(path string) { smi.SetPath(path + string(os.PathListSeparator)) }
 
+func AddModuleFile(name string, data []byte) { smi.AddModuleFile(name, data) }
+
 func ReadConfig(filename string, tag ...string) error { return smi.ReadConfig(filename, tag...) }
