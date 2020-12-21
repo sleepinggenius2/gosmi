@@ -100,14 +100,6 @@ func LoadModule(modulePath string) (string, error) {
 	return moduleName, nil
 }
 
-func LoadModuleBytes(modulePath string, moduleBytes []byte) (string, error) {
-	moduleName := smi.LoadModuleBytes(modulePath, moduleBytes)
-	if moduleName == "" {
-		return "", fmt.Errorf("Could not load module at %s", modulePath)
-	}
-	return moduleName, nil
-}
-
 func GetLoadedModules() (modules []SmiModule) {
 	for smiModule := smi.GetFirstModule(); smiModule != nil; smiModule = smi.GetNextModule(smiModule) {
 		modules = append(modules, CreateModule(smiModule))

@@ -186,6 +186,27 @@ func (x *ModuleMap) GetName(name string) *Module {
 	return x.Get(types.SmiIdentifier(name))
 }
 
+type ModuleFiles struct {
+	m map[string][]byte
+}
+
+func (x *ModuleFiles) Add(name string, bytes []byte) {
+	x.m[name] = bytes
+}
+
+func (x *ModuleFiles) Get(name string) ([]byte, bool) {
+	data, ok := x.m[name]
+	return data, ok
+}
+
+func (x *ModuleFiles) Exists(name string) bool {
+	if len(x.m) == 0 {
+		return false
+	}
+	_, ok := x.m[name]
+	return ok
+}
+
 type Import struct {
 	types.SmiImport
 	ModulePtr *Module
@@ -310,36 +331,45 @@ func GetModule(name string) (*Module, error) {
 	if module != nil {
 		return module, nil
 	}
+
+	if moduleFiles.Exists(name) {
+		return LoadModuleFile(name)
+	}
+
 	return LoadModule(name)
 }
 
 func LoadModule(name string) (*Module, error) {
-	//log.Printf("%s: Loading", name)
+	// log.Printf("%s: Loading", name)
 	path, err := GetModulePath(name)
 	if err != nil {
 		return nil, errors.Wrap(err, "Get module path")
 	}
-	//log.Printf("%s: Found at %s", name, path)
+	// log.Printf("LoadModule: %s: Found at %s", name, path)
 	in, err := parser.ParseFile(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "Parse module")
 	}
-	//log.Printf("%s: Parsed", name)
+	// log.Printf("LoadModule: %s: Parsed", name)
 	out, err := BuildModule(path, in)
 	if err != nil {
 		return nil, errors.Wrap(err, "Build module")
 	}
-	//log.Printf("%s: Built", name)
+	// log.Printf("LoadModule: %s: Built", name)
 	return out, nil
 }
 
-func LoadModuleBytes(modulePath string, moduleBytes []byte) (*Module, error) {
+func LoadModuleFile(name string) (*Module, error) {
+	moduleBytes, ok := moduleFiles.Get(name)
+	if !ok {
+		return nil, errors.New("Get module file")
+	}
 	moduleReader := bytes.NewReader(moduleBytes)
 	in, err := parser.Parse(moduleReader)
 	if err != nil {
 		return nil, errors.Wrap(err, "Parse module")
 	}
-	out, err := BuildModule(modulePath, in)
+	out, err := BuildModule(name, in)
 	if err != nil {
 		return nil, errors.Wrap(err, "Build module")
 	}

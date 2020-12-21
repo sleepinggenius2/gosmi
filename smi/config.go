@@ -107,6 +107,10 @@ func SetPath(path string) {
 	}
 }
 
+func AddModuleFile(name string, data []byte) {
+	internal.AddModuleFile(name, data)
+}
+
 // void smiSetSeverity(char *pattern, int severity)
 func SetSeverity(pattern string, severity int) {
 	checkInit()

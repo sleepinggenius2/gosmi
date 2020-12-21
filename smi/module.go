@@ -21,18 +21,6 @@ func LoadModule(module string) string {
 	return modulePtr.Name.String()
 }
 
-func LoadModuleBytes(modulePath string, moduleBytes []byte) string {
-	checkInit()
-	modulePtr, err := internal.LoadModuleBytes(modulePath, moduleBytes)
-	if err != nil {
-		fmt.Println(err)
-	}
-	if modulePtr == nil {
-		return ""
-	}
-	return modulePtr.Name.String()
-}
-
 // int smiIsLoaded(const char *module)
 func IsLoaded(module string) bool {
 	checkInit()

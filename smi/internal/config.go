@@ -8,6 +8,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+var moduleFiles *ModuleFiles
+
+func init() {
+	moduleFiles = &ModuleFiles{
+		m: make(map[string][]byte),
+	}
+}
+
 func Init(handleName string) bool {
 	smiHandle = findHandleByName(handleName)
 	if smiHandle != nil {
@@ -99,4 +107,8 @@ func PrependPath(path ...string) {
 	}
 	paths = append(paths, smiHandle.Paths...)
 	smiHandle.Paths = paths
+}
+
+func AddModuleFile(name string, data []byte) {
+	moduleFiles.Add(name, data)
 }
