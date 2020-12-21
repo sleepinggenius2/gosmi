@@ -340,22 +340,22 @@ func GetModule(name string) (*Module, error) {
 }
 
 func LoadModule(name string) (*Module, error) {
-	// log.Printf("%s: Loading", name)
+	//log.Printf("%s: Loading", name)
 	path, err := GetModulePath(name)
 	if err != nil {
 		return nil, errors.Wrap(err, "Get module path")
 	}
-	// log.Printf("LoadModule: %s: Found at %s", name, path)
+	//log.Printf("%s: Found at %s", name, path)
 	in, err := parser.ParseFile(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "Parse module")
 	}
-	// log.Printf("LoadModule: %s: Parsed", name)
+	//log.Printf("%s: Parsed", name)
 	out, err := BuildModule(path, in)
 	if err != nil {
 		return nil, errors.Wrap(err, "Build module")
 	}
-	// log.Printf("LoadModule: %s: Built", name)
+	//log.Printf("%s: Built", name)
 	return out, nil
 }
 
