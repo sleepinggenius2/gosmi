@@ -106,7 +106,7 @@ func Root() *Node {
 func oidFromSubId(subId types.SmiSubId) parser.Oid {
 	return parser.Oid{
 		SubIdentifiers: []parser.SubIdentifier{
-			parser.SubIdentifier{Number: &subId},
+			{Number: &subId},
 		},
 	}
 }

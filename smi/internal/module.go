@@ -660,9 +660,9 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 			currObject.AddElements(node.TrapType.Objects)
 			node.Oid = &parser.Oid{
 				SubIdentifiers: []parser.SubIdentifier{
-					parser.SubIdentifier{Name: &node.TrapType.Enterprise},
-					parser.SubIdentifier{Number: new(types.SmiSubId)},
-					parser.SubIdentifier{Number: node.SubIdentifier},
+					{Name: &node.TrapType.Enterprise},
+					{Number: new(types.SmiSubId)},
+					{Number: node.SubIdentifier},
 				},
 			}
 		default:

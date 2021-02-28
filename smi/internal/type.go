@@ -33,7 +33,7 @@ func (x *Type) AddList(list *List) {
 func (x *Type) AddRange(min types.SmiValue, max types.SmiValue) {
 	list := &List{}
 	list.Ptr = &Range{
-		SmiRange: types.SmiRange{min, max},
+		SmiRange: types.SmiRange{MinValue: min, MaxValue: max},
 		Type:     x,
 		List:     list,
 	}
@@ -43,7 +43,7 @@ func (x *Type) AddRange(min types.SmiValue, max types.SmiValue) {
 func (x *Type) AddNamedNumber(name types.SmiIdentifier, value types.SmiValue) {
 	list := &List{}
 	list.Ptr = &NamedNumber{
-		SmiNamedNumber: types.SmiNamedNumber{name, value},
+		SmiNamedNumber: types.SmiNamedNumber{Name: name, Value: value},
 		Type:           x,
 		List:           list,
 	}
