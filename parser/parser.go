@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -9,7 +10,6 @@ import (
 	"github.com/alecthomas/participle"
 	"github.com/alecthomas/participle/lexer"
 	"github.com/alecthomas/participle/lexer/ebnf"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -58,9 +58,12 @@ func Parse(r io.Reader) (*Module, error) {
 func ParseFile(path string) (*Module, error) {
 	r, err := os.Open(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "Open file")
+		return nil, fmt.Errorf("Open file: %w", err)
 	}
 	defer r.Close()
 	module, err := Parse(r)
-	return module, errors.Wrap(err, "Parse file")
+	if err != nil {
+		return module, fmt.Errorf("Parse file: %w", err)
+	}
+	return module, nil
 }

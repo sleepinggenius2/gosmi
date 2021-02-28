@@ -1,8 +1,9 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/participle/lexer"
-	"github.com/pkg/errors"
 
 	"github.com/sleepinggenius2/gosmi/types"
 )
@@ -18,10 +19,10 @@ type MacroBody struct {
 func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 	token, err := lex.Next()
 	if err != nil {
-		return err
+		return fmt.Errorf("Get 'BEGIN' token: %w", err)
 	}
 	if token.Value != "BEGIN" {
-		return errors.Errorf("Expected 'BEGIN', Got '%s'", token.Value)
+		return fmt.Errorf("Expected 'BEGIN', Got '%s'", token.Value)
 	}
 	m.Pos = token.Pos
 
@@ -31,19 +32,17 @@ func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 	for {
 		token, err = lex.Next()
 		if err != nil {
-			return err
+			return fmt.Errorf("Next token: %w", err)
 		}
 		if token.Value == "END" {
 			break
 		}
 		peek, _ := lex.Peek(0)
 		if ((token.Value == "TYPE" || token.Value == "VALUE") && peek.Value == "NOTATION") || peek.Type == symbols["Assign"] {
-			if token.Value == "NOTATION" {
+			if peek.Value == "NOTATION" {
 				tokenName += " NOTATION"
-				_, err = lex.Next()
-				if err != nil {
-					return err
-				}
+				// Peek should guarantee there is a next token
+				_, _ = lex.Next()
 				continue
 			}
 			if tokenName != "" {
@@ -59,10 +58,8 @@ func (m *MacroBody) Parse(lex *lexer.PeekingLexer) error {
 			tokenName = token.Value
 			tokenValue = ""
 			if peek.Type == symbols["Assign"] {
-				_, err = lex.Next()
-				if err != nil {
-					return err
-				}
+				// Peek should guarantee there is a next token
+				_, _ = lex.Next()
 			}
 			continue
 		}

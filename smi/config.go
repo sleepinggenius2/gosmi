@@ -1,12 +1,11 @@
 package smi
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/pkg/errors"
 
 	"github.com/sleepinggenius2/gosmi/smi/internal"
 	"github.com/sleepinggenius2/gosmi/types"
@@ -117,7 +116,7 @@ func SetSeverity(pattern string, severity int) {
 func ReadConfig(filename string, tag ...string) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		return errors.Wrap(err, "Open file")
+		return fmt.Errorf("Open file: %w", err)
 	}
 	defer f.Close()
 	// TODO: Parse file

@@ -1,10 +1,10 @@
 package parser
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/alecthomas/participle/lexer"
-	"github.com/pkg/errors"
 
 	"github.com/sleepinggenius2/gosmi/types"
 )
@@ -25,13 +25,13 @@ func (x *SubIdentifier) Parse(lex *lexer.PeekingLexer) error {
 	if token.Type == symbols["Int"] {
 		n, err := strconv.ParseUint(token.Value, 10, 32)
 		if err != nil {
-			return errors.Wrap(err, "Parse number")
+			return fmt.Errorf("Parse number: %w", err)
 		}
 		x.Number = new(types.SmiSubId)
 		*x.Number = types.SmiSubId(n)
 		return nil
 	} else if token.Type != symbols["Ident"] {
-		return errors.Errorf("Unexpected %q, expected Ident", token)
+		return fmt.Errorf("Unexpected %q, expected Ident", token)
 	}
 	x.Name = new(types.SmiIdentifier)
 	*x.Name = types.SmiIdentifier(token.Value)
@@ -51,11 +51,11 @@ func (x *SubIdentifier) Parse(lex *lexer.PeekingLexer) error {
 		return err
 	}
 	if token.Type != symbols["Int"] {
-		return errors.Errorf("Unexpected %q, expected Int", token)
+		return fmt.Errorf("Unexpected %q, expected Int", token)
 	}
 	n, err := strconv.ParseUint(token.Value, 10, 32)
 	if err != nil {
-		return errors.Wrap(err, "Parse number")
+		return fmt.Errorf("Parse number: %w", err)
 	}
 	x.Number = new(types.SmiSubId)
 	*x.Number = types.SmiSubId(n)
@@ -64,7 +64,7 @@ func (x *SubIdentifier) Parse(lex *lexer.PeekingLexer) error {
 		return err
 	}
 	if token.Value != ")" {
-		return errors.Errorf("Unexpected %q, expected \")\"", token)
+		return fmt.Errorf("Unexpected %q, expected \")\"", token)
 	}
 	return nil
 }

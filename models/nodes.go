@@ -1,7 +1,8 @@
 package models
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+	"fmt"
 
 	"github.com/sleepinggenius2/gosmi/types"
 )
@@ -60,7 +61,7 @@ func (t TableNode) BuildIndex(index ...interface{}) (types.Oid, error) {
 	for i := range index {
 		indexValue, err := tableIndex[i].Type.IndexValue(index[i], t.Row.Implied && (i == tableIndexLen-1))
 		if err != nil {
-			return nil, errors.Wrap(err, tableIndex[i].Name+": "+tableIndex[i].Type.BaseType.String())
+			return nil, fmt.Errorf("%s (%v): %w", tableIndex[i].Name, tableIndex[i].Type.BaseType, err)
 		}
 		ret = append(ret, indexValue...)
 	}

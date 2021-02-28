@@ -1,11 +1,11 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 func Init(handleName string) bool {
@@ -42,14 +42,14 @@ func expandPath(path string) (string, error) {
 	}
 	path, err := filepath.Abs(path)
 	if err != nil {
-		return "", errors.Wrapf(err, "Get absolute path for '%s'", path)
+		return "", fmt.Errorf("Get absolute path for '%s': %w", path, err)
 	}
 	info, err := os.Stat(path)
 	if err != nil {
-		return "", errors.Wrapf(err, "Cannot stat '%s'", path)
+		return "", fmt.Errorf("Cannot stat '%s': %w", path, err)
 	}
 	if !info.IsDir() {
-		return "", errors.Errorf("'%s' is not a directory", path)
+		return "", fmt.Errorf("'%s' is not a directory", path)
 	}
 	return path, nil
 }

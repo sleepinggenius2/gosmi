@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
@@ -117,7 +116,7 @@ func ToInt64(value interface{}) (val int64, err error) {
 	case string:
 		return strconv.ParseInt(value, 10, 64)
 	default:
-		err = errors.Errorf("Value has invalid type: %T", value)
+		err = fmt.Errorf("Value has invalid type: %T", value)
 	}
 	return
 }

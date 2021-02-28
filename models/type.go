@@ -1,10 +1,10 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/sleepinggenius2/gosmi/types"
 )
 
@@ -50,7 +50,7 @@ func (e *Enum) Value(name string) (int64, error) {
 			return k, nil
 		}
 	}
-	return 0, errors.New("Unknown enum name: " + name)
+	return 0, fmt.Errorf("Unknown enum name %q", name)
 }
 
 type NamedNumber struct {
@@ -180,5 +180,5 @@ func (t Type) IndexValue(value interface{}, implied bool) (types.Oid, error) {
 	case types.BaseTypeOctetString:
 		return t.indexValueOctetString(value, implied)
 	}
-	return nil, errors.Errorf("Invalid base type: %v", t.BaseType)
+	return nil, fmt.Errorf("Invalid base type: %v", t.BaseType)
 }

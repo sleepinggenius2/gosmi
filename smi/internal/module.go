@@ -1,12 +1,12 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/sleepinggenius2/gosmi/parser"
 	"github.com/sleepinggenius2/gosmi/types"
@@ -254,7 +254,7 @@ func GetModulePath(name string) (string, error) {
 		dir, file := filepath.Split(name)
 		dir, err := expandPath(dir)
 		if err != nil {
-			return "", errors.Wrap(err, "Expand path")
+			return "", fmt.Errorf("Expand path: %w", err)
 		}
 		return filepath.Join(dir, file), nil
 	}
@@ -297,8 +297,11 @@ func GetModulePath(name string) (string, error) {
 			}
 			return nil
 		})
-		if err != nil || modulePath != "" {
-			return modulePath, errors.Wrapf(err, "Walk path '%s'", p)
+		if err != nil {
+			return modulePath, fmt.Errorf("Walk path '%s': %w", p, err)
+		}
+		if modulePath != "" {
+			return modulePath, nil
 		}
 	}
 	return "", os.ErrNotExist
@@ -316,17 +319,17 @@ func LoadModule(name string) (*Module, error) {
 	//log.Printf("%s: Loading", name)
 	path, err := GetModulePath(name)
 	if err != nil {
-		return nil, errors.Wrap(err, "Get module path")
+		return nil, fmt.Errorf("Get module path: %w", err)
 	}
 	//log.Printf("%s: Found at %s", name, path)
 	in, err := parser.ParseFile(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "Parse module")
+		return nil, fmt.Errorf("Parse module: %w", err)
 	}
 	//log.Printf("%s: Parsed", name)
 	out, err := BuildModule(path, in)
 	if err != nil {
-		return nil, errors.Wrap(err, "Build module")
+		return nil, fmt.Errorf("Build module: %w", err)
 	}
 	//log.Printf("%s: Built", name)
 	return out, nil
@@ -667,7 +670,7 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 			}
 		default:
 			// This should never happen
-			return nil, errors.Errorf("Cannot determine type for node '%s'", node.Name)
+			return nil, fmt.Errorf("Cannot determine type for node '%s'", node.Name)
 		}
 		out.Objects.AddWithOid(currObject, *node.Oid)
 	}
