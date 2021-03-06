@@ -26,6 +26,11 @@ var DefaultSmiPaths []string = []string{
 	"/usr/local/share/mibs/tubs",
 }
 
+type FS = internal.FS
+type NamedFS = internal.NamedFS
+
+func NewNamedFS(name string, fs FS) NamedFS { return NamedFS{Name: "[" + name + "]", FS: fs} }
+
 func checkInit() {
 	if !internal.Initialized() {
 		Init()
@@ -97,13 +102,7 @@ func SetPath(path string) {
 	if len(paths) == 0 {
 		return
 	}
-	if paths[0] == "" {
-		internal.AppendPath(paths[1:]...)
-	} else if paths[len(paths)-1] == "" {
-		internal.PrependPath(paths[:len(paths)-1]...)
-	} else {
-		internal.SetPath(paths...)
-	}
+	internal.SetPath(paths...)
 }
 
 // void smiSetSeverity(char *pattern, int severity)
@@ -128,3 +127,7 @@ func SetErrorHandler(smiErrorHandler types.SmiErrorHandler) {
 	checkInit()
 	internal.SetErrorHandler(smiErrorHandler)
 }
+
+func SetFS(fs ...NamedFS)     { internal.SetFS(fs...) }
+func AppendFS(fs ...NamedFS)  { internal.AppendFS(fs...) }
+func PrependFS(fs ...NamedFS) { internal.PrependFS(fs...) }

@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -245,66 +246,65 @@ func FindModuleByName(modulename string) *Module {
 	return smiHandle.Modules.GetName(modulename)
 }
 
-func GetModulePath(name string) (string, error) {
+func GetModuleFile(name string) (string, io.ReadCloser, error) {
 	if name == "" {
-		return "", errors.New("Name is required")
+		return "", nil, errors.New("Name is required")
 	}
 	// Relative or absolute
 	if name[0] == '.' || name[0] == '~' || filepath.IsAbs(name) {
 		dir, file := filepath.Split(name)
 		dir, err := expandPath(dir)
 		if err != nil {
-			return "", fmt.Errorf("Expand path: %w", err)
+			return "", nil, fmt.Errorf("Expand path: %w", err)
 		}
-		return filepath.Join(dir, file), nil
+		name = filepath.Join(dir, file)
 	}
 
 	if filepath.Ext(name) != "" {
 		// Filename w/ extension
 		for _, path := range smiHandle.Paths {
-			fullpath := filepath.Join(path, name)
-			info, err := os.Stat(fullpath)
-			if err == nil && info.Mode().IsRegular() {
-				return fullpath, nil
+			fullpath := filepath.Join(path.Name, name)
+			f, err := path.FS.Open(name)
+			if err != nil {
+				if errors.Is(err, os.ErrInvalid) || errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+				return fullpath, nil, fmt.Errorf("Open file: %w", err)
 			}
+			return fullpath, f, nil
 		}
-		return "", os.ErrNotExist
+		return "", nil, os.ErrNotExist
 	}
 
-	var modulePath string
-	for _, p := range smiHandle.Paths {
-		err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.Mode().IsRegular() {
-				return nil
-			}
-			if info.Name() == name {
-				modulePath = path
-				return filepath.SkipDir
-			}
-			parts := strings.SplitN(info.Name(), ".", 2)
-			if parts[0] == name {
-				var ext string
-				if len(parts) > 1 {
-					ext = parts[1]
-				}
-				if ext == "" || ext == "mib" || ext == "my" || ext == "mi2" || ext == "txt" {
-					modulePath = path
-					return filepath.SkipDir
-				}
-			}
-			return nil
-		})
+	for _, path := range smiHandle.Paths {
+		dirEntries, err := path.FS.ReadDir(".")
 		if err != nil {
-			return modulePath, fmt.Errorf("Walk path '%s': %w", p, err)
+			return path.Name, nil, fmt.Errorf("Read directory: %w", err)
 		}
-		if modulePath != "" {
-			return modulePath, nil
+		for _, dirEntry := range dirEntries {
+			if dirEntry.IsDir() {
+				continue
+			}
+			parts := strings.SplitN(dirEntry.Name(), ".", 2)
+			if parts[0] != name {
+				continue
+			}
+			var ext string
+			if len(parts) > 1 {
+				ext = parts[1]
+			}
+			switch ext {
+			case "", "mib", "my", "mi2", "txt":
+				fullpath := filepath.Join(path.Name, dirEntry.Name())
+				r, err := path.FS.Open(dirEntry.Name())
+				if err != nil {
+					return fullpath, nil, fmt.Errorf("Open file: %w", err)
+				}
+				return fullpath, r, nil
+			}
 		}
 	}
-	return "", os.ErrNotExist
+	return "", nil, os.ErrNotExist
 }
 
 func GetModule(name string) (*Module, error) {
@@ -317,12 +317,13 @@ func GetModule(name string) (*Module, error) {
 
 func LoadModule(name string) (*Module, error) {
 	//log.Printf("%s: Loading", name)
-	path, err := GetModulePath(name)
+	path, f, err := GetModuleFile(name)
 	if err != nil {
-		return nil, fmt.Errorf("Get module path: %w", err)
+		return nil, fmt.Errorf("Get module file %q: %w", path, err)
 	}
+	defer f.Close()
 	//log.Printf("%s: Found at %s", name, path)
-	in, err := parser.ParseFile(path)
+	in, err := parser.Parse(f)
 	if err != nil {
 		return nil, fmt.Errorf("Parse module: %w", err)
 	}

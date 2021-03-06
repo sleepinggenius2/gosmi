@@ -51,7 +51,7 @@ func Init() {
 		gosmi.AppendPath(path)
 	}
 
-	for _, module := range modules {
+	for i, module := range modules {
 		moduleName, err := gosmi.LoadModule(module)
 		if err != nil {
 			fmt.Printf("Init Error: %s\n", err)
@@ -60,6 +60,7 @@ func Init() {
 		if debug {
 			fmt.Printf("Loaded module %s\n", moduleName)
 		}
+		modules[i] = moduleName
 	}
 
 	if debug {

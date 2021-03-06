@@ -28,7 +28,7 @@ type Handle struct {
 	TypeUnsigned32       *Type
 	TypeUnsigned64       *Type
 	Flags                Flags
-	Paths                []string
+	Paths                []NamedFS
 	Cache                string
 	CacheProg            string
 	ErrorLevel           int

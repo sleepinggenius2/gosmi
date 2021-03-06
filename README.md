@@ -17,3 +17,4 @@ Examples can now be found in:
 
 * [cmd/parse](cmd/parse)
 * [cmd/smi](cmd/smi)
+* [cmd/embed](cmd/embed)

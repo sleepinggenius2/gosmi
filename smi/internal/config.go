@@ -26,7 +26,11 @@ func Exit() {
 }
 
 func GetPath() string {
-	return strings.Join(smiHandle.Paths, string(os.PathListSeparator))
+	names := make([]string, len(smiHandle.Paths))
+	for i, fs := range smiHandle.Paths {
+		names[i] = fs.Name
+	}
+	return strings.Join(names, string(os.PathListSeparator))
 }
 
 func expandPath(path string) (string, error) {
@@ -60,41 +64,41 @@ func SetPath(path ...string) {
 		return
 	}
 	if path[0] == "" {
-		AppendPath(path[1:]...)
+		appendPath(path[1:]...)
 	} else if path[pathLen-1] == "" {
-		PrependPath(path[:pathLen-1]...)
+		prependPath(path[:pathLen-1]...)
 	} else {
-		smiHandle.Paths = make([]string, 0, pathLen)
+		smiHandle.Paths = make([]NamedFS, 0, pathLen)
 		for _, p := range path {
 			if p, err := expandPath(p); err == nil {
-				smiHandle.Paths = append(smiHandle.Paths, p)
+				smiHandle.Paths = append(smiHandle.Paths, newPathFS(p))
 			}
 		}
 	}
 }
 
-func AppendPath(path ...string) {
+func appendPath(path ...string) {
 	if len(path) == 0 {
 		return
 	}
-	paths := make([]string, len(smiHandle.Paths), len(smiHandle.Paths)+len(path))
+	paths := make([]NamedFS, len(smiHandle.Paths), len(smiHandle.Paths)+len(path))
 	copy(paths, smiHandle.Paths)
 	for _, p := range path {
 		if p, err := expandPath(p); err == nil {
-			paths = append(paths, p)
+			paths = append(paths, newPathFS(p))
 		}
 	}
 	smiHandle.Paths = paths
 }
 
-func PrependPath(path ...string) {
+func prependPath(path ...string) {
 	if len(path) == 0 {
 		return
 	}
-	paths := make([]string, 0, len(smiHandle.Paths)+len(path))
+	paths := make([]NamedFS, 0, len(smiHandle.Paths)+len(path))
 	for _, p := range path {
 		if p, err := expandPath(p); err == nil {
-			paths = append(paths, p)
+			paths = append(paths, newPathFS(p))
 		}
 	}
 	paths = append(paths, smiHandle.Paths...)
