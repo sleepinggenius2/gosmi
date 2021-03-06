@@ -188,8 +188,9 @@ func (x *ObjectMap) linkObject(oid parser.Oid, o *Object) {
 	var parentName types.SmiIdentifier
 	for i := 0; i < len(oid.SubIdentifiers)-1; i++ {
 		subId := oid.SubIdentifiers[i]
+		var obj *Object
 		if subId.Name != nil {
-			obj := o.Module.GetObject(*subId.Name)
+			obj = o.Module.GetObject(*subId.Name)
 			if obj != nil && obj.Node != nil {
 				parentName = ""
 				parentNodePtr = obj.Node
@@ -207,6 +208,9 @@ func (x *ObjectMap) linkObject(oid parser.Oid, o *Object) {
 		nodePtr = &Node{
 			SubId:  *subId.Number,
 			Parent: parentNodePtr,
+		}
+		if obj != nil {
+			obj.Node = nodePtr
 		}
 		if subId.Name != nil {
 			// Create parent
