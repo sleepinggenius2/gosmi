@@ -42,7 +42,7 @@ func expandPath(path string) (string, error) {
 		if err != nil {
 			return "", errors.New("Cannot expand homedir")
 		}
-		path = filepath.Join(homedir, path)
+		path = filepath.Join(homedir, path[1:])
 	}
 	path, err := filepath.Abs(path)
 	if err != nil {
