@@ -130,18 +130,18 @@ func GetParentNode(smiNodePtr *types.SmiNode) *types.SmiNode {
 	}
 	var parentPtr *internal.Object
 	if objPtr.Module != nil {
-		parentPtr = internal.FindObjectByModuleAndNode(objPtr.Module, objPtr.Node)
+		parentPtr = internal.FindObjectByModuleAndNode(objPtr.Module, objPtr.Node.Parent)
 		if parentPtr != nil {
 			importPtr := objPtr.Module.Imports.Get(parentPtr.Name)
 			if importPtr != nil {
-				parentPtr = internal.FindObjectByModuleNameAndNode(string(importPtr.Module), objPtr.Node)
+				parentPtr = internal.FindObjectByModuleNameAndNode(string(importPtr.Module), objPtr.Node.Parent)
 			} else {
 				parentPtr = nil
 			}
 		}
 	}
 	if parentPtr == nil {
-		parentPtr = internal.FindObjectByNode(objPtr.Node)
+		parentPtr = internal.FindObjectByNode(objPtr.Node.Parent)
 	}
 	if parentPtr == nil {
 		return nil
