@@ -14,6 +14,8 @@ import (
 
 var (
 	// TODO: Comments can also end with a "--"
+	// Per the ASN.1 (ITU-T X.680) specification of a number token (Int below):
+	// The first digit shall not be zero unless the "number" is a single digit.
 	smiLexer = lexer.Must(ebnf.New(`
 		Keyword = "FROM" .
 		ObjectIdentifier = "OBJECT" Whitespace { Whitespace } "IDENTIFIER" .

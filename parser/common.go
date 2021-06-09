@@ -75,6 +75,8 @@ type Oid struct {
 	SubIdentifiers []SubIdentifier `parser:"@@+"`
 }
 
+// Per RFC2578 Appendix A, not all valid ASN.1 refinements are allowed by SMI
+// Specifically, MIN and MAX are not valid range values, nor is '<' permitted on the lower or upper end point
 type Range struct {
 	Pos lexer.Position
 
