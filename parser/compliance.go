@@ -29,9 +29,9 @@ type AgentCapabilityModule struct {
 type AgentCapabilities struct {
 	Pos lexer.Position
 
-	ProductRelease string                  `parser:"\"PRODUCT-RELEASE\" @Text"`                  // Required
-	Status         Status                  `parser:"\"STATUS\" @( \"current\" | \"obsolete\" )"` // Required
-	Description    string                  `parser:"\"DESCRIPTION\" @Text"`                      // Required
+	ProductRelease string                  `parser:"\"PRODUCT-RELEASE\" @Text"`                                   // Required
+	Status         Status                  `parser:"\"STATUS\" @( \"current\" | \"deprecated\" | \"obsolete\" )"` // Required - RFC1444 Section 5.2 defines "deprecated" value
+	Description    string                  `parser:"\"DESCRIPTION\" @Text"`                                       // Required
 	Reference      string                  `parser:"( \"REFERENCE\" @Text )?"`
 	Modules        []AgentCapabilityModule `parser:"@@*"`
 }
@@ -90,7 +90,7 @@ type ModuleComplianceModule struct {
 type ModuleCompliance struct {
 	Pos lexer.Position
 
-	Status      Status                   `parser:"\"STATUS\" @( \"current\" | \"deprecated\" | \"obsolete\" )"` // Required
+	Status      Status                   `parser:"\"STATUS\" @( \"current\" | \"deprecated\" | \"obsolete\" )"` // Required - RFC1444 Section 4.1 defines "deprecated" value
 	Description string                   `parser:"\"DESCRIPTION\" @Text"`                                       // Required
 	Reference   string                   `parser:"( \"REFERENCE\" @Text )?"`
 	Modules     []ModuleComplianceModule `parser:"( \"MODULE\" @@ )+"`
