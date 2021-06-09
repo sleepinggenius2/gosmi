@@ -16,8 +16,8 @@ var (
 	// TODO: Comments can also end with a "--"
 	smiLexer = lexer.Must(ebnf.New(`
 		Keyword = "FROM" .
-		ObjectIdentifier = "OBJECT IDENTIFIER" .
-		OctetString = "OCTET STRING" .
+		ObjectIdentifier = "OBJECT" Whitespace { Whitespace } "IDENTIFIER" .
+		OctetString = "OCTET" Whitespace { Whitespace } "STRING" .
 		BinString = "'" { "0" | "1" } "'" ( "b" | "B" ) .
 		HexString = "'" { digit | "a"…"f" | "A"…"F" } "'" ( "h" | "H" ) .
 		Assign = "::=" .
@@ -44,6 +44,14 @@ var (
 			token.Value = compressSpace.ReplaceAllString(strings.TrimSpace(strings.Trim(token.Value, `"`)), "\n")
 			return token, nil
 		}, "ExtUTCTime", "Text"),
+		participle.Map(func(token lexer.Token) (lexer.Token, error) {
+			token.Value = "OBJECT IDENTIFIER"
+			return token, nil
+		}, "ObjectIdentifier"),
+		participle.Map(func(token lexer.Token) (lexer.Token, error) {
+			token.Value = "OCTET STRING"
+			return token, nil
+		}, "OctetString"),
 		//participle.UseLookahead(2),
 		participle.Upper("ExtUTCTime", "BinString", "HexString"),
 		participle.Elide("Whitespace", "Comment"),
