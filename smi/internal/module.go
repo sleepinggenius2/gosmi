@@ -146,6 +146,32 @@ func (x *Module) SetPrefixNode(n *Node) {
 	}
 }
 
+func (x *Module) getTrapTypePlaceholder(enterprise types.SmiIdentifier, line int) *Object {
+	smiv1TrapPlaceholder := enterprise + "#"
+	placeholder := x.Objects.Get(smiv1TrapPlaceholder)
+	if placeholder != nil {
+		return placeholder
+	}
+	placeholder = &Object{
+		SmiNode: types.SmiNode{
+			Name:     smiv1TrapPlaceholder,
+			Decl:     types.DeclImplObject,
+			NodeKind: types.NodeNode,
+		},
+		Module: x,
+		Line:   line,
+	}
+	placeholder.Description = "Implicit zero sub-identifier for " + enterprise.String() + " SMIv1 enterprise-specific traps. See RFC 2576 Section 3 for reference."
+	oid := parser.Oid{
+		SubIdentifiers: []parser.SubIdentifier{
+			{Name: &enterprise},
+			{Number: new(types.SmiSubId)},
+		},
+	}
+	x.Objects.AddWithOid(placeholder, oid)
+	return placeholder
+}
+
 type ModuleMap struct {
 	First *Module
 
@@ -662,10 +688,10 @@ func BuildModule(path string, in *parser.Module) (*Module, error) {
 			currObject.Description = node.TrapType.Description
 			currObject.Reference = node.TrapType.Reference
 			currObject.AddElements(node.TrapType.Objects)
+			placeholder := out.getTrapTypePlaceholder(node.TrapType.Enterprise, currObject.Line)
 			node.Oid = &parser.Oid{
 				SubIdentifiers: []parser.SubIdentifier{
-					{Name: &node.TrapType.Enterprise},
-					{Number: new(types.SmiSubId)},
+					{Name: &placeholder.Name},
 					{Number: node.SubIdentifier},
 				},
 			}
