@@ -9,7 +9,7 @@ import (
 	"github.com/sleepinggenius2/gosmi"
 )
 
-//go:embed FIZBIN-MIB.mib
+//go:embed mibs
 var fs embed.FS
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	gosmi.Init()
 
-	gosmi.SetFS(gosmi.NamedFS("Embed Example", fs))
+	gosmi.SetFS(gosmi.NamedFS("mibs", fs))
 
 	m, err := gosmi.GetModule(*module)
 	if err != nil {

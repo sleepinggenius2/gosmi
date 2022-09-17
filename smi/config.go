@@ -29,7 +29,7 @@ var DefaultSmiPaths []string = []string{
 type FS = internal.FS
 type NamedFS = internal.NamedFS
 
-func NewNamedFS(name string, fs FS) NamedFS { return NamedFS{Name: "[" + name + "]", FS: fs} }
+func NewNamedFS(name string, fs FS) NamedFS { return NamedFS{Name: name, FS: fs} }
 
 func checkInit() {
 	if !internal.Initialized() {
