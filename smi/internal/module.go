@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sleepinggenius2/gosmi/parser"
-	"github.com/sleepinggenius2/gosmi/types"
+	"github.com/min-oc/gosmi/parser"
+	"github.com/min-oc/gosmi/types"
 )
 
 type Module struct {

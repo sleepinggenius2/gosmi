@@ -6,7 +6,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/sleepinggenius2/gosmi"
+	"github.com/min-oc/gosmi"
 )
 
 //go:embed mibs
