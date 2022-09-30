@@ -324,7 +324,7 @@ func GetModuleFile(name string) (string, io.ReadCloser, error) {
 			}
 			switch ext {
 			case "", "mib", "my", "mi2", "txt":
-				fullpath := filepath.Join(path.Name, dirEntry.Name())
+				fullpath := path.Name + "/" + dirEntry.Name()
 				r, err := path.FS.Open(fullpath)
 				if err != nil {
 					return fullpath, nil, fmt.Errorf("Open file: %w", err)
