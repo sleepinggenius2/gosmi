@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/min-oc/gosmi/parser"
@@ -173,6 +174,7 @@ func (x *Module) getTrapTypePlaceholder(enterprise types.SmiIdentifier, line int
 }
 
 type ModuleMap struct {
+	sync.RWMutex
 	First *Module
 
 	last      *Module
@@ -181,6 +183,8 @@ type ModuleMap struct {
 }
 
 func (x *ModuleMap) Add(m *Module) {
+	x.Lock()
+	defer x.Unlock()
 	if m.IsWellKnown() {
 		x.wellKnown = m
 	}
@@ -199,6 +203,8 @@ func (x *ModuleMap) Add(m *Module) {
 }
 
 func (x *ModuleMap) Get(name types.SmiIdentifier) *Module {
+	x.RLock()
+	defer x.RUnlock()
 	if name == WellKnownModuleName {
 		return x.wellKnown
 	}
