@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/sleepinggenius2/gosmi/parser"
-	"github.com/sleepinggenius2/gosmi/types"
+	"github.com/min-oc/gosmi/parser"
+	"github.com/min-oc/gosmi/types"
 )
 
 type Module struct {
@@ -173,6 +174,7 @@ func (x *Module) getTrapTypePlaceholder(enterprise types.SmiIdentifier, line int
 }
 
 type ModuleMap struct {
+	sync.RWMutex
 	First *Module
 
 	last      *Module
@@ -181,6 +183,8 @@ type ModuleMap struct {
 }
 
 func (x *ModuleMap) Add(m *Module) {
+	x.Lock()
+	defer x.Unlock()
 	if m.IsWellKnown() {
 		x.wellKnown = m
 	}
@@ -199,6 +203,8 @@ func (x *ModuleMap) Add(m *Module) {
 }
 
 func (x *ModuleMap) Get(name types.SmiIdentifier) *Module {
+	x.RLock()
+	defer x.RUnlock()
 	if name == WellKnownModuleName {
 		return x.wellKnown
 	}
@@ -303,7 +309,10 @@ func GetModuleFile(name string) (string, io.ReadCloser, error) {
 	}
 
 	for _, path := range smiHandle.Paths {
-		dirEntries, err := path.FS.ReadDir(".")
+		if filepath.IsAbs(path.Name) {
+			path.Name = ""
+		}
+		dirEntries, err := path.FS.ReadDir(path.Name)
 		if err != nil {
 			return path.Name, nil, fmt.Errorf("Read directory: %w", err)
 		}
@@ -321,8 +330,8 @@ func GetModuleFile(name string) (string, io.ReadCloser, error) {
 			}
 			switch ext {
 			case "", "mib", "my", "mi2", "txt":
-				fullpath := filepath.Join(path.Name, dirEntry.Name())
-				r, err := path.FS.Open(dirEntry.Name())
+				fullpath := path.Name + "/" + dirEntry.Name()
+				r, err := path.FS.Open(fullpath)
 				if err != nil {
 					return fullpath, nil, fmt.Errorf("Open file: %w", err)
 				}

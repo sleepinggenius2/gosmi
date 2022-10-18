@@ -1,4 +1,4 @@
-module github.com/sleepinggenius2/gosmi
+module github.com/min-oc/gosmi
 
 go 1.16
 

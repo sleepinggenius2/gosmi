@@ -1,7 +1,9 @@
 package internal
 
 import (
-	"github.com/sleepinggenius2/gosmi/types"
+	"sync"
+
+	"github.com/min-oc/gosmi/types"
 )
 
 type Node struct {
@@ -33,6 +35,7 @@ func (x *Node) IsRoot() bool {
 }
 
 type NodeChildMap struct {
+	sync.RWMutex
 	First *Node
 
 	last *Node
@@ -40,6 +43,7 @@ type NodeChildMap struct {
 }
 
 func (x *NodeChildMap) Add(n *Node) {
+
 	existing := x.Get(n.SubId)
 	if existing != nil {
 		for obj := n.FirstObject; obj != nil; obj = obj.NextSameNode {
@@ -47,6 +51,8 @@ func (x *NodeChildMap) Add(n *Node) {
 		}
 		return
 	}
+	x.Lock()
+	defer x.Unlock()
 	if n.Parent != nil && n.Parent.Oid != nil {
 		n.Oid = types.NewOid(n.Parent.Oid, n.SubId)
 		n.OidLen = n.Parent.OidLen + 1
@@ -82,6 +88,8 @@ func (x *NodeChildMap) Add(n *Node) {
 }
 
 func (x *NodeChildMap) Get(id types.SmiSubId) *Node {
+	x.RLock()
+	defer x.RUnlock()
 	if x.m == nil {
 		return nil
 	}
